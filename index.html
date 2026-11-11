@@ -1,0 +1,1335 @@
+<!doctype html>
+<html lang="th">
+<head>
+<title>ปฏิทินคอนเทนต์ ISAN Insight</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=Bai+Jamjuree:wght@600;700&display=swap">
+<style>
+/* Layout: navy masthead with view tabs, a filter strip, then one working surface (month grid, stage board, or my queue). Format = color. */
+:root{
+  --bg:#f2f4f9; --surface:#ffffff; --surface-2:#e7ecf6; --line:#d2daeb;
+  --fg:#0d2a6e; --muted:#56658a;
+  --brand:#0d2a6e; --brand-fg:#ffffff; --brand-soft:#c7d3ef;
+  --accent:#ffc72c; --accent-fg:#0d2a6e;
+  --diary:#0d2a6e; --motion:#e9a800; --info:#2b9fd8;
+  --danger:#c2283b; --warn:#a86500; --ok:#1f7a52;
+  --font-display:"Bai Jamjuree","Anuphan",system-ui,sans-serif;
+  --font-body:"Anuphan","Noto Sans Thai",system-ui,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#081634; --surface:#0f2250; --surface-2:#15295c; --line:#24397a;
+  --fg:#eef2fb; --muted:#a3b2d6;
+  --brand:#0d2a6e; --brand-fg:#ffffff; --brand-soft:#8fa3d6;
+  --accent:#ffc72c; --accent-fg:#0d2a6e;
+  --diary:#8eaaf0; --motion:#ffc72c; --info:#5cc2f2;
+  --danger:#ff6b7d; --warn:#f0b54a; --ok:#4fbf8a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#081634; --surface:#0f2250; --surface-2:#15295c; --line:#24397a;
+  --fg:#eef2fb; --muted:#a3b2d6;
+  --brand:#0d2a6e; --brand-fg:#ffffff; --brand-soft:#8fa3d6;
+  --accent:#ffc72c; --accent-fg:#0d2a6e;
+  --diary:#8eaaf0; --motion:#ffc72c; --info:#5cc2f2;
+  --danger:#ff6b7d; --warn:#f0b54a; --ok:#4fbf8a; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* masthead */
+.mast{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:var(--brand-fg)}
+.mast-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto;min-width:0}
+.brand h1{font-family:var(--font-display);font-size:20px;margin:0;letter-spacing:.01em;white-space:nowrap}
+.brand h1 b{color:var(--accent)}
+.brand span{color:var(--brand-soft);font-size:13px;white-space:nowrap}
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.08);padding:4px;border-radius:999px}
+.tabs a{color:var(--brand-fg);text-decoration:none;padding:6px 14px;border-radius:999px;font-weight:500;font-size:14px;white-space:nowrap}
+.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-fg)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 14px;font-weight:500}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent;font-weight:600}
+.btn.primary:hover{filter:brightness(.96)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.danger{color:var(--danger)}
+.btn.danger.armed{background:var(--danger);color:#fff;border-color:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* strip */
+.strip-in{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;padding-block:12px;border-bottom:1px solid var(--line)}
+.fmt-toggle{display:flex;gap:6px;flex-wrap:wrap}
+.fmt-toggle button{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px 4px 8px;font-size:13px}
+.fmt-toggle button .dot{width:10px;height:10px;border-radius:50%}
+.fmt-toggle button[aria-pressed="false"]{opacity:.45}
+.fmt-toggle button[aria-pressed="false"] .dot{background:transparent!important;box-shadow:inset 0 0 0 1.5px var(--muted)}
+.strip label{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.strip select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 8px}
+.month-nav{display:flex;align-items:center;gap:6px;margin-left:auto}
+.month-nav h2{font-family:var(--font-display);font-size:18px;margin:0 6px;min-width:9.5em;text-align:center}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;width:34px;height:34px;display:grid;place-items:center}
+.icon-btn svg{width:16px;height:16px}
+
+/* banners */
+.banner{margin-top:12px;padding:10px 14px;border-radius:var(--r);background:var(--surface-2);border:1px solid var(--line);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.banner.warn{border-color:var(--warn)}
+.banner input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;min-width:0;flex:1 1 160px;max-width:260px}
+
+main{padding-block:16px 48px}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--line);gap:1px}
+.dow{background:var(--surface-2);padding:6px 8px;font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em}
+.day{background:var(--surface);min-height:118px;padding:6px;display:flex;flex-direction:column;gap:4px;min-width:0;cursor:copy}
+.day.other{background:var(--bg)}
+.day.other .num{opacity:.45}
+.day.drop{outline:2px dashed var(--accent);outline-offset:-3px}
+.day .num{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.day.today .num span{background:var(--accent);color:var(--accent-fg);border-radius:999px;padding:0 7px}
+.chip{display:block;width:100%;text-align:left;border:0;border-radius:6px;padding:3px 7px;font-size:12.5px;line-height:1.35;background:color-mix(in srgb,var(--c) 18%,var(--surface));color:var(--fg);cursor:grab;min-width:0}
+.chip .t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.chip .s{display:flex;gap:6px;font-size:11px;color:var(--fg);font-weight:600}
+.chip.posted{opacity:.6}
+.chip.posted .t{text-decoration:line-through}
+.chip:hover{background:color-mix(in srgb,var(--c) 24%,var(--surface))}
+.chip.late{box-shadow:inset 0 0 0 1.5px var(--danger)}
+.chip.due{background:transparent;border:1.5px dashed color-mix(in srgb,var(--c) 70%,var(--line));padding:2px 6px;cursor:pointer}
+[data-drag]{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.drag-ghost{position:fixed;left:0;top:0;margin:0;z-index:40;pointer-events:none;opacity:.95;box-shadow:0 10px 26px rgba(5,12,35,.32)}
+.chip.due.drag-ghost{background:var(--surface)}
+.drag-src{opacity:.3}
+body.dragging,body.dragging *{cursor:grabbing!important}
+.chip.due{cursor:grab}
+.chip.due .t{font-weight:500;font-size:11.5px}
+.chip.due .k{font-weight:700;margin-right:4px}
+.chip.due.overdue{border-color:var(--danger);border-style:solid}
+.chip.due.overdue .k{color:var(--danger)}
+
+/* agenda (phone) */
+.agenda{display:flex;flex-direction:column;gap:14px}
+.agenda .ag-day h3{margin:0 0 6px;font-size:14px;color:var(--muted);font-weight:600}
+.agenda .ag-day.today h3{color:var(--fg)}
+.agenda .ag-day.today h3::after{content:"วันนี้";margin-left:8px;background:var(--accent);color:var(--accent-fg);border-radius:999px;padding:0 8px;font-size:12px}
+.agenda .list{display:flex;flex-direction:column;gap:6px}
+.agenda .chip{padding:8px 10px;font-size:14px}
+
+/* board */
+.board-scroll{overflow-x:auto;padding-bottom:8px}
+.board{display:grid;grid-template-columns:repeat(5,minmax(220px,1fr));gap:12px;min-width:1150px}
+.col{background:var(--surface-2);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:240px}
+.col.drop{outline:2px dashed var(--accent);outline-offset:-2px}
+.col h3{margin:0;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.col h3 small{font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+.col .hint{font-size:12px;color:var(--muted);margin-top:-4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;text-align:left;width:100%;display:flex;flex-direction:column;gap:6px;cursor:grab}
+.card:hover{border-color:color-mix(in srgb,var(--c) 60%,var(--line))}
+.card .t{font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--muted);align-items:center}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--fg)}
+.tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;border-radius:999px;padding:1px 8px;background:var(--surface-2);color:var(--muted)}
+.pill.turn-editor{background:color-mix(in srgb,var(--accent) 35%,var(--surface));color:var(--fg)}
+.pill.turn-review{background:color-mix(in srgb,var(--info) 20%,var(--surface));color:var(--fg)}
+.pill.changes{background:color-mix(in srgb,var(--danger) 16%,var(--surface));color:var(--danger)}
+.pill.done{background:color-mix(in srgb,var(--ok) 16%,var(--surface));color:var(--ok)}
+.pill.late{background:color-mix(in srgb,var(--danger) 16%,var(--surface));color:var(--danger)}
+.pill.soon{background:color-mix(in srgb,var(--warn) 18%,var(--surface));color:var(--warn)}
+.empty-col{font-size:13px;color:var(--muted);padding:6px 2px}
+.board-opts{display:flex;justify-content:flex-end;margin-bottom:10px;font-size:13px;color:var(--muted)}
+.board-opts label{display:flex;gap:6px;align-items:center}
+
+/* mine */
+.mine{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.mine section h2{font-family:var(--font-display);font-size:18px;margin:0 0 4px}
+.mine section p.sub{margin:0 0 12px;color:var(--muted);font-size:13px}
+.mine .list{display:flex;flex-direction:column;gap:8px}
+.row{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;text-align:left;width:100%}
+.row .date{font-variant-numeric:tabular-nums;font-weight:600;font-size:13px;text-align:center;line-height:1.15;min-width:3.2em}
+.row .date small{display:block;font-weight:500;color:var(--muted);font-size:11px}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.empty{padding:24px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);text-align:center}
+
+/* first-run empty state */
+.welcome{max-width:640px;margin:8px auto 20px;padding:20px 22px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.welcome h2{font-family:var(--font-display);margin:0 0 6px;font-size:19px}
+.welcome p{margin:0 0 10px;color:var(--muted)}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;margin:6px 0}
+.flow b{font-weight:600}
+.flow i{font-style:normal;color:var(--muted)}
+
+/* dialog */
+dialog{border:0;border-radius:14px;padding:0;background:var(--surface);color:var(--fg);width:min(640px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 20px 60px rgba(5,12,35,.35)}
+dialog::backdrop{background:rgba(8,15,35,.5)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 24px)}
+.dlg-head{padding:16px 20px 10px;display:flex;gap:12px;align-items:flex-start;border-bottom:1px solid var(--line)}
+.dlg-head input{flex:1;min-width:0;font-family:var(--font-display);font-size:19px;font-weight:700;border:0;background:transparent;padding:4px 0;border-bottom:1.5px solid transparent}
+.dlg-head input:focus{outline:none;border-bottom-color:var(--accent)}
+.dlg-body{padding:14px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.dlg-foot{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dlg-foot .sp{margin-left:auto}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.dues{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field>span{font-size:12.5px;color:var(--muted);font-weight:500}
+.field input,.field select,.field textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 10px;min-width:0;width:100%}
+.field textarea{min-height:70px;resize:vertical}
+.field .link-row{display:flex;gap:6px}
+.field .link-row a{display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;padding:0 10px;color:var(--fg);text-decoration:none;font-size:13px;white-space:nowrap}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 12px;font-size:13.5px;display:flex;align-items:center;gap:6px}
+.seg button .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.seg button[aria-pressed="true"]{border-color:var(--c,var(--accent));background:color-mix(in srgb,var(--c,var(--accent)) 14%,var(--surface));font-weight:600}
+.steps{display:flex;gap:4px;flex-wrap:wrap}
+.steps button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 12px;font-size:13px;color:var(--muted)}
+.steps button.past{color:var(--fg);background:var(--surface-2)}
+.steps button[aria-pressed="true"]{background:var(--brand);color:var(--brand-fg);border-color:var(--brand);font-weight:600}
+.action{border-radius:var(--r);padding:12px 14px;background:color-mix(in srgb,var(--accent) 16%,var(--surface));display:flex;flex-direction:column;gap:8px}
+.action h4{margin:0;font-size:14px}
+.action p{margin:0;font-size:13px;color:var(--muted)}
+.action .acts{display:flex;gap:8px;flex-wrap:wrap}
+.action textarea,.action input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;width:100%}
+.log{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px;margin:0;padding:0;list-style:none}
+.log li b{color:var(--fg);font-weight:600}
+.err{color:var(--danger);font-size:13px;min-height:1em}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:14px;z-index:20}
+
+/* kpi */
+.kpi-bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:14px}
+.kpi-bar .note{font-size:12.5px;color:var(--muted);margin-right:auto}
+.kpi-bar .seg button{padding:5px 12px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:14px;align-items:start}
+.kbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.kbox.open{grid-column:1/-1}
+.kbox.open .k-rows{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:10px 24px}
+.kbox.team{background:var(--brand);color:var(--brand-fg);border-color:var(--brand)}
+.kbox.team .k-sub,.kbox.team .k-row small,.kbox.team .k-delta.none{color:var(--brand-soft)}
+.kbox.team .k-bar{background:rgba(255,255,255,.16)}
+.kbox.team .btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:var(--brand-fg)}
+.kbox.team .k-table th{color:var(--brand-soft)} .kbox.team .k-table td,.kbox.team .k-table th{border-color:rgba(255,255,255,.18)}
+.kbox.team .k-table a{color:var(--brand-fg)}
+.kbox.team .k-delta.up{color:#7fe0ae} .kbox.team .k-delta.down{color:#ffb0ba}
+.k-head{display:flex;align-items:baseline;gap:10px}
+.k-head h3{margin:0;font-family:var(--font-display);font-size:18px}
+.k-sub{font-size:12.5px;color:var(--muted)}
+.k-rows{display:flex;flex-direction:column;gap:9px}
+.k-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:baseline}
+.k-row .lab{font-size:13.5px;font-weight:500}
+.k-row .val{font-variant-numeric:tabular-nums;font-weight:700;font-size:17px;text-align:right;white-space:nowrap}
+.k-row .val small{font-weight:500;font-size:12px;margin-left:4px}
+.k-row .info{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:2px 10px;font-size:12px;align-items:center}
+.k-row small{color:var(--muted)}
+.k-bar{grid-column:1/-1;height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.k-bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+.k-bar.done i{background:var(--ok)}
+.k-delta{font-variant-numeric:tabular-nums;font-weight:600}
+.k-delta.up{color:var(--ok)} .k-delta.down{color:var(--danger)} .k-delta.none{color:var(--muted);font-weight:500}
+.k-tablewrap{overflow-x:auto;margin:0 -4px}
+.k-table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+.k-table th,.k-table td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.k-table th{font-weight:600;color:var(--muted);font-size:11.5px}
+.k-table th:first-child,.k-table td:first-child{text-align:left;white-space:normal;min-width:9em}
+.k-table a{color:var(--fg)}
+.k-table .young{display:block;font-size:11px;color:var(--warn);font-weight:600}
+.kbox.team .k-table .young{color:var(--accent)}
+.tg-grid{display:grid;grid-template-columns:minmax(6em,1.2fr) repeat(4,minmax(5.5em,1fr));gap:6px 8px;align-items:center;font-size:13px}
+.tg-grid b{font-size:12px;color:var(--muted);font-weight:600}
+.tg-grid input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px;width:100%;min-width:0;font-variant-numeric:tabular-nums;text-align:right}
+.tg-wrap{overflow-x:auto}
+.tg-wrap .tg-grid{min-width:520px}
+
+@media (max-width:720px){
+  .brand span{display:none}
+  .mine{grid-template-columns:minmax(0,1fr)}
+  .month-nav{margin-left:0;width:100%;justify-content:space-between}
+  .month-nav h2{min-width:0}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="mast-in wrap">
+    <div class="brand"><h1>ISAN <b>Insight</b></h1><span>ปฏิทินคอนเทนต์ของทีม</span></div>
+    <nav class="tabs" aria-label="มุมมอง">
+      <a href="#calendar" data-view="calendar">ปฏิทิน</a>
+      <a href="#board" data-view="board">บอร์ด</a>
+      <a href="#mine" data-view="mine">งานของฉัน</a>
+      <a href="#kpi" data-view="kpi">KPI</a>
+    </nav>
+    <button class="btn primary" id="newBtn" type="button">+ งานใหม่</button>
+    <button class="btn" id="authBtn" type="button" hidden></button>
+  </div>
+</header>
+
+<div class="strip wrap">
+  <div class="strip-in">
+    <div class="fmt-toggle" id="fmtToggle" aria-label="กรองตามรูปแบบ"></div>
+    <label for="ownerFilter">เจ้าของ <select id="ownerFilter"><option value="">ทุกคน</option></select></label>
+    <label for="showDues" id="showDuesF" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="showDues"> แสดงกำหนดส่ง</label>
+    <div class="month-nav" id="monthNav">
+      <button class="icon-btn" id="prevM" type="button" aria-label="เดือนก่อน"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3 5 8l5 5"/></svg></button>
+      <h2 id="monthLabel"></h2>
+      <button class="icon-btn" id="nextM" type="button" aria-label="เดือนถัดไป"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 3 5 5-5 5"/></svg></button>
+      <button class="btn" id="todayBtn" type="button">วันนี้</button>
+    </div>
+  </div>
+  <div id="banners"></div>
+</div>
+
+<main class="wrap" id="main"></main>
+
+<dialog id="dlg" aria-labelledby="fTitle">
+  <form class="dlg" id="form" method="dialog">
+    <div class="dlg-head">
+      <input id="fTitle" name="title" placeholder="ชื่อเรื่อง" autocomplete="off" required aria-label="ชื่อเรื่อง">
+      <button class="icon-btn" type="button" id="closeDlg" aria-label="ปิด"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3 3 13"/></svg></button>
+    </div>
+    <div class="dlg-body">
+      <div class="field"><span>รูปแบบ</span><div class="seg" id="fFormat"></div></div>
+      <div class="grid2">
+        <label class="field"><span>เจ้าของงาน</span><select id="fOwner"></select></label>
+        <label class="field"><span>วันโพสต์</span><input type="date" id="fDate" required></label>
+      </div>
+      <div class="dues">
+        <label class="field" id="voiceDueF"><span>วันอัปเสียง (กำหนดส่ง)</span><input type="date" id="fVoiceDue"></label>
+        <label class="field"><span id="clipDueLbl">วันอัปคลิป (กำหนดส่ง)</span><input type="date" id="fClipDue"></label>
+        <label class="field" id="coverDueF"><span>วันส่งปกคลิป (กำหนดส่ง)</span><input type="date" id="fCoverDue"></label>
+      </div>
+      <div class="field"><span>ขั้นตอน</span><div class="steps" id="fStage"></div></div>
+      <div id="fAction"></div>
+      <label class="field"><span>โฟลเดอร์ Drive (Note, บท, ไฟล์เสียง)</span><div class="link-row"><input id="fDrive" type="url" placeholder="https://drive.google.com/..." autocomplete="off"><a id="fDriveGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
+      <label class="field"><span id="fWorkLbl">ลิงก์คลิป</span><div class="link-row"><input id="fWork" type="url" placeholder="https://..." autocomplete="off"><a id="fWorkGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
+      <label class="field" id="coverUrlF"><span>ลิงก์ปกคลิป</span><div class="link-row"><input id="fCoverUrl" type="url" placeholder="https://..." autocomplete="off"><a id="fCoverGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
+      <label class="field"><span>ลิงก์โพสต์จริง</span><div class="link-row"><input id="fPost" type="url" placeholder="ใส่หลังโพสต์แล้ว" autocomplete="off"><a id="fPostGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
+      <label class="field"><span>โน้ต</span><textarea id="fNote" placeholder="ประเด็น มุมเล่า ข้อควรระวัง"></textarea></label>
+      <div class="field" id="logWrap" hidden><span>ความเคลื่อนไหว</span><ul class="log" id="fLog"></ul></div>
+      <div class="err" id="fErr" role="alert"></div>
+    </div>
+    <div class="dlg-foot">
+      <button class="btn danger" type="button" id="delBtn">ลบงานนี้</button>
+      <span class="sp"></span>
+      <button class="btn ghost" type="button" id="cancelBtn">ยกเลิก</button>
+      <button class="btn primary" type="submit" id="saveBtn">บันทึก</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="tgDlg" aria-labelledby="tgTitle">
+  <form class="dlg" id="tgForm" method="dialog">
+    <div class="dlg-head"><h2 id="tgTitle" style="margin:0;font-family:var(--font-display);font-size:19px;flex:1">ตั้งเป้า</h2>
+      <button class="icon-btn" type="button" id="tgClose" aria-label="ปิด"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3 3 13"/></svg></button></div>
+    <div class="dlg-body"><p class="k-sub" style="margin:0">เว้นว่าง = ไม่มีเป้า ช่องนั้นจะเทียบกับเดือนก่อนอย่างเดียว เป้าทีมตั้งแยก ไม่ได้รวมจากรายคน</p>
+      <div class="tg-wrap"><div class="tg-grid" id="tgGrid"></div></div><div class="err" id="tgErr" role="alert"></div></div>
+    <div class="dlg-foot"><span class="sp"></span><button class="btn ghost" type="button" id="tgCancel">ยกเลิก</button><button class="btn primary" type="submit" id="tgSave">บันทึกเป้า</button></div>
+  </form>
+</dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+"use strict";
+firebase.initializeApp(window.FIREBASE_CONFIG);
+
+/* ---------- constants ---------- */
+const FORMATS = {
+  diary:  {label:"ISAN Diary",  sub:"คลิปแผนที่",       flow:"video", c:"var(--diary)"},
+  motion: {label:"ISAN Motion", sub:"Motion Graphic",   flow:"video", c:"var(--motion)"},
+  info:   {label:"Infographic", sub:"งานภาพ",            flow:"info",  c:"var(--info)"}
+};
+const FLOWS = {
+  video:[["idea","ไอเดีย"],["script","บท"],["voice","เสียง"],["clip","คลิป"],["post","โพสต์"]],
+  info: [["idea","ไอเดีย"],["content","เนื้อหา"],["design","อินโฟ"],["post","โพสต์"]]
+};
+const COLS = [
+  {k:"idea",  l:"ไอเดีย",       map:{video:"idea",  info:"idea"}},
+  {k:"write", l:"บท / เนื้อหา", map:{video:"script",info:"content"}},
+  {k:"voice", l:"เสียง",        map:{video:"voice", info:null}},
+  {k:"make",  l:"คลิป / อินโฟ", map:{video:"clip",  info:"design"}},
+  {k:"post",  l:"โพสต์",        map:{video:"post",  info:"post"}}
+];
+const TH_MONTH = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+const TH_MON_S = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+const TH_DOW = ["จ.","อ.","พ.","พฤ.","ศ.","ส.","อา."];
+
+/* ---------- state ---------- */
+const S = {
+  view:"calendar", month:null, items:new Map(), members:new Map(), profiles:{}, editorId:null,
+  me:null, isOwner:false, db:null, user:null, readOnly:false, loaded:false, slow:false, noDb:false,
+  fmtOn:{diary:true,motion:true,info:true}, ownerFilter:"", hidePosted:true, editing:null,
+  kpi:{}, kfol:{}, ktg:{}, kRate:false, kOpen:new Set()
+};
+const store = {
+  get(k,d){try{const v=localStorage.getItem("iic."+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("iic."+k,JSON.stringify(v))}catch(e){}}
+};
+S.fmtOn = Object.assign(S.fmtOn, store.get("fmtOn",{}));
+S.hidePosted = store.get("hidePosted",true);
+S.hideDues = store.get("hideDues",true);
+S.kRate = store.get("kRate",false);
+
+/* ---------- utils ---------- */
+const $ = s => document.querySelector(s);
+function h(tag, attrs, ...kids){
+  const el = document.createElement(tag);
+  if(attrs) for(const [k,v] of Object.entries(attrs)){
+    if(v==null || v===false) continue;
+    if(k==="class") el.className=v;
+    else if(k==="style") el.setAttribute("style",v);
+    else if(k.startsWith("on")) el.addEventListener(k.slice(2),v);
+    else if(k==="text") el.textContent=v;
+    else el.setAttribute(k, v===true?"":v);
+  }
+  for(const c of kids.flat()){ if(c==null||c===false) continue; el.append(c.nodeType?c:document.createTextNode(String(c))); }
+  return el;
+}
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseYmd = s => { const [y,m,d]=String(s||"").split("-").map(Number); return y?new Date(y,m-1,d):null; };
+const todayStr = () => ymd(new Date());
+const daysBetween = (a,b) => Math.round((parseYmd(b)-parseYmd(a))/86400000);
+function thShort(s){ const d=parseYmd(s); return d? d.getDate()+" "+TH_MON_S[d.getMonth()] : "ไม่มีวัน"; }
+function thLong(s){ const d=parseYmd(s); return d? d.getDate()+" "+TH_MONTH[d.getMonth()]+" "+(d.getFullYear()+543) : ""; }
+const flowOf = it => (FORMATS[it.format]||FORMATS.diary).flow;
+const stagesOf = it => FLOWS[flowOf(it)];
+const stageLabel = it => (stagesOf(it).find(s=>s[0]===it.stage)||["","?"])[1];
+const stageIdx = (it,st) => stagesOf(it).findIndex(s=>s[0]===(st||it.stage));
+function safeUrl(u){ try{ const x=new URL(u); return (x.protocol==="https:"||x.protocol==="http:")?x.href:null; }catch(e){ return null; } }
+
+function nameOf(id){
+  if(!id) return "ยังไม่มีเจ้าของ";
+  const m=S.members.get(id); if(m && m.nick) return m.nick;
+  const p=S.profiles[id]; return (p && p.name) || "สมาชิก";
+}
+const editorName = () => S.editorId ? nameOf(S.editorId) : "ลีโอ";
+
+let toastT;
+function toast(msg){
+  let t=$(".toast"); if(!t){ t=h("div",{class:"toast",role:"status"}); document.body.append(t); }
+  t.textContent=msg; t.hidden=false; clearTimeout(toastT); toastT=setTimeout(()=>t.hidden=true,2600);
+}
+
+/* ---------- status logic ---------- */
+function status(it){
+  const out={pill:null,cls:"",turn:"owner",late:false,soon:false};
+  const t=todayStr();
+  if(it.stage==="post" && it.posted){ out.pill="โพสต์แล้ว"; out.cls="done"; out.turn=null; return out; }
+  if(it.postDate && it.postDate<t){ out.late=true; }
+  else if(it.postDate && daysBetween(t,it.postDate)<=3 && stageIdx(it)<stageIdx(it,flowOf(it)==="video"?"clip":"design")) out.soon=true;
+  if(it.stage==="clip"){
+    if(it.clipState==="review"){ out.pill="รอเจ้าของรีวิว"; out.cls="turn-review"; out.turn="owner"; }
+    else if(it.clipState==="changes"){ out.pill="แก้ตามคำติ"; out.cls="changes"; out.turn="editor"; }
+    else { out.pill="รอ"+editorName()+"ทำคลิป"; out.cls="turn-editor"; out.turn="editor"; }
+  } else if(it.stage==="post"){ out.pill="รอโพสต์"; }
+  const m=nextDue(it);
+  if(m){ out.next=m; if(m.date<t) out.dueLate="เลยกำหนด"+m.kind; }
+  return out;
+}
+/* the next pending deadline, or null */
+function pendingDues(it){
+  const out=[];
+  if(it.posted) return out;
+  if(flowOf(it)==="video"){
+    if(it.voiceDue && stageIdx(it)<stageIdx(it,"clip")) out.push({kind:"เสียง",date:it.voiceDue,field:"voiceDue"});
+    if(it.clipDue && (stageIdx(it)<stageIdx(it,"clip") || (it.stage==="clip" && it.clipState!=="review"))) out.push({kind:"คลิป",date:it.clipDue,field:"clipDue"});
+    /* the cover runs alongside the stages: it is done once its link is attached */
+    if(it.coverDue && !it.coverUrl) out.push({kind:"ปก",date:it.coverDue,field:"coverDue"});
+  } else if(it.clipDue && stageIdx(it)<stageIdx(it,"post")) out.push({kind:"อินโฟ",date:it.clipDue,field:"clipDue"});
+  out.sort((a,b)=>a.date.localeCompare(b.date));
+  return out;
+}
+function nextDue(it){ return pendingDues(it)[0]||null; }
+
+/* ---------- filtering ---------- */
+function visible(it){
+  if(!S.fmtOn[it.format]) return false;
+  if(S.ownerFilter && it.owner!==S.ownerFilter) return false;
+  return true;
+}
+function allItems(){ return [...S.items.values()].sort((a,b)=>(a.postDate||"9").localeCompare(b.postDate||"9")||String(a.title).localeCompare(String(b.title),"th")); }
+
+/* ---------- writes ---------- */
+const chains=new Map();
+function queueWrite(id, fn){
+  const prev=chains.get(id)||Promise.resolve();
+  const next=prev.catch(()=>{}).then(fn);
+  chains.set(id,next); return next;
+}
+function writeErr(e){
+  const code=e && e.code;
+  if(code==="permission-denied"){ return "บันทึกไม่ได้ บัญชีนี้ไม่มีสิทธิ์ทำรายการนี้"; }
+  if(code==="quota_exceeded") return "พื้นที่เก็บข้อมูลเต็ม ลบงานเก่าที่โพสต์แล้วออกบางส่วนก่อน";
+  if(code==="resource-exhausted") return "บันทึกถี่เกินไป รอสักครู่แล้วลองอีกครั้ง";
+  return "บันทึกไม่สำเร็จ ลองอีกครั้ง";
+}
+function logEntry(text){ return {by:S.me, at:new Date().toISOString(), text}; }
+function withLog(it, text){ const log=(it.log||[]).slice(-29); log.push(logEntry(text)); return log; }
+
+async function saveItem(id, data){
+  if(!S.db) throw {code:"not_granted"};
+  data.updatedBy=S.me; data.updatedAt=new Date().toISOString();
+  const ref=S.db.doc("items/"+id);
+  return queueWrite(id, ()=>ref.set(data));
+}
+async function patchItem(id, patch, logText){
+  const cur=S.items.get(id); if(!cur) return;
+  const next=Object.assign({}, cur, patch);
+  if(logText) next.log=withLog(cur, logText);
+  delete next.id;
+  try{ await saveItem(id, next); }catch(e){ toast(writeErr(e)); throw e; }
+}
+
+/* stage change with business rules; returns false if blocked */
+function stageChange(it, to){
+  const p={stage:to};
+  const vid=flowOf(it)==="video";
+  const from=it.stage;
+  if(vid && to==="clip" && from!=="clip"){ p.clipState="queue"; }
+  if(vid && stageIdx(it,to)<stageIdx(it,"clip")) p.clipState=null;
+  if(vid && to==="post" && from==="clip") p.clipState="approved";
+  if(to!=="post") p.posted=false;
+  return p;
+}
+function stageText(it,to){ const l=(stagesOf(it).find(s=>s[0]===to)||["",""])[1]; return "ย้ายไปขั้น"+l; }
+
+async function moveStage(id, to){
+  const it=S.items.get(id); if(!it||it.stage===to) return;
+  if(flowOf(it)==="video" && to==="clip" && stageIdx(it)<stageIdx(it,"clip") && !safeUrl(it.driveUrl)){
+    openItem(id,{handoff:true}); return;
+  }
+  const p=stageChange(it,to);
+  let txt=stageText(it,to);
+  if(p.clipState==="queue") txt="ส่งงานให้"+editorName()+"ทำคลิป";
+  if(p.clipState==="approved") txt="รีวิวผ่าน พร้อมโพสต์";
+  try{ await patchItem(id,p,txt); toast(txt); }catch(e){}
+}
+async function moveDate(id, date){
+  const it=S.items.get(id); if(!it||it.postDate===date) return;
+  if((it.voiceDue&&it.voiceDue>date)||(it.clipDue&&it.clipDue>date)||(it.coverDue&&it.coverDue>date)){ toast("วันโพสต์ต้องไม่มาก่อนกำหนดส่ง เลื่อนกำหนดส่งก่อน"); return; }
+  try{ await patchItem(id,{postDate:date},"เลื่อนวันโพสต์เป็น "+thShort(date)); toast("เลื่อนไป "+thShort(date)); }catch(e){}
+}
+async function moveDue(id, field, date){
+  const it=S.items.get(id); if(!it||it[field]===date) return;
+  const kind = field==="voiceDue" ? "เสียง" : field==="coverDue" ? "ปก" : (flowOf(it)==="video"?"คลิป":"อินโฟ");
+  if(it.postDate && date>it.postDate){ toast("วันส่ง"+kind+"ต้องไม่เลยวันโพสต์"); return; }
+  if(field==="voiceDue" && it.clipDue && date>it.clipDue){ toast("วันอัปเสียงต้องมาก่อนวันอัปคลิป"); return; }
+  if(field==="clipDue" && it.voiceDue && date<it.voiceDue){ toast("วันอัปคลิปต้องมาหลังวันอัปเสียง"); return; }
+  try{ await patchItem(id,{[field]:date},"ย้ายวันส่ง"+kind+"เป็น "+thShort(date)); toast("ย้ายวันส่ง"+kind+"ไป "+thShort(date)); }catch(e){}
+}
+
+/* ---------- banners ---------- */
+function renderBanners(){
+  const b=$("#banners"); b.replaceChildren();
+  if(S.noDb){
+    if(S.denied) b.append(h("div",{class:"banner warn"},h("span",null,"อีเมล "+S.me+" ยังไม่อยู่ในรายชื่อทีม ส่งอีเมลนี้ให้แอดมินเพิ่ม หรือ"),h("button",{class:"btn",type:"button",onclick:signOut},"เปลี่ยนบัญชี")));
+    else b.append(h("div",{class:"banner"},h("span",null,"ล็อกอินด้วยบัญชี Google ที่อยู่ในรายชื่อทีม จึงจะเห็นและแก้แผนงานได้"),h("button",{class:"btn primary",type:"button",onclick:signIn},"ล็อกอินด้วย Google")));
+    return;
+  }
+  if(S.slow && !S.loaded) b.append(h("div",{class:"banner warn"},"ยังโหลดข้อมูลของทีมไม่ได้ ตรวจอินเทอร์เน็ตแล้วรอสักครู่"));
+  if(S.readOnly) b.append(h("div",{class:"banner warn"},"บัญชีนี้ดูได้อย่างเดียว"));
+  if(S.loaded && S.me && !S.readOnly && !(S.members.get(S.me)||{}).nick){
+    const inp=h("input",{id:"nickInput",placeholder:"เช่น พี่คิง",maxlength:"24","aria-label":"ชื่อเรียกในทีม"});
+    const myP=S.profiles[S.me]; if(myP && myP.name) inp.placeholder=myP.name;
+    const go=async()=>{
+      const nick=inp.value.trim()||(myP&&myP.name)||""; if(!nick){ inp.focus(); return; }
+      try{ await queueWrite("m"+S.me,()=>S.db.doc("members/"+S.me).set({nick, joinedAt:new Date().toISOString()},{merge:true})); toast("บันทึกชื่อแล้ว"); }
+      catch(e){ toast(writeErr(e)); }
+    };
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter") go(); });
+    b.append(h("div",{class:"banner"},h("span",null,"ตั้งชื่อเรียกของคุณในทีม ชื่อนี้จะขึ้นเป็นเจ้าของงาน"),inp,h("button",{class:"btn primary",type:"button",onclick:go},"บันทึกชื่อ")));
+  }
+}
+
+/* ---------- strip ---------- */
+function renderStrip(){
+  const ft=$("#fmtToggle"); ft.replaceChildren();
+  for(const [k,f] of Object.entries(FORMATS)){
+    ft.append(h("button",{type:"button","aria-pressed":String(!!S.fmtOn[k]),style:"--c:"+f.c,onclick:()=>{S.fmtOn[k]=!S.fmtOn[k];store.set("fmtOn",S.fmtOn);render();}},
+      h("span",{class:"dot",style:"background:"+f.c}), f.label));
+  }
+  const of=$("#ownerFilter"); const cur=S.ownerFilter; of.replaceChildren(h("option",{value:""},"ทุกคน"));
+  for(const id of memberIds()) of.append(h("option",{value:id},nameOf(id)));
+  of.value=cur;
+  $("#monthNav").hidden = S.view!=="calendar" && S.view!=="kpi";
+  $("#showDuesF").style.display = S.view==="calendar" ? "inline-flex" : "none";
+  of.parentElement.style.display = S.view==="kpi" ? "none" : "";
+  $("#showDues").checked = !S.hideDues;
+  $("#monthLabel").textContent = TH_MONTH[S.month.getMonth()]+" "+(S.month.getFullYear()+543);
+  document.querySelectorAll(".tabs a").forEach(a=>a.setAttribute("aria-current",a.dataset.view===S.view?"page":"false"));
+  $("#newBtn").disabled = !S.db || S.readOnly;
+}
+function memberIds(){
+  const ids=new Set(S.members.keys());
+  for(const it of S.items.values()) if(it.owner) ids.add(it.owner);
+  return [...ids].sort((a,b)=>nameOf(a).localeCompare(nameOf(b),"th"));
+}
+
+/* ---------- chip/card builders ---------- */
+function dragProps(id){ return {"data-drag":id}; }
+function chip(it){
+  const f=FORMATS[it.format]||FORMATS.diary, st=status(it);
+  const c=h("button",Object.assign({type:"button",class:"chip"+(st.pill==="โพสต์แล้ว"?" posted":"")+(st.late?" late":""),style:"--c:"+f.c,
+    title:it.title+", "+f.label+", "+stageLabel(it),onclick:e=>{e.stopPropagation();openItem(it.id);}},dragProps(it.id)),
+    h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
+    h("span",{class:"s"},h("span",null,stageLabel(it)), h("span",{style:"color:var(--muted);font-weight:500"},nameOf(it.owner))));
+  return c;
+}
+function card(it){
+  const f=FORMATS[it.format]||FORMATS.diary, st=status(it);
+  return h("button",Object.assign({type:"button",class:"card",style:"--c:"+f.c,onclick:()=>openItem(it.id)},dragProps(it.id)),
+    h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
+    h("span",{class:"meta"},h("span",{class:"tag",style:"--c:"+f.c},f.label), h("span",null,"โพสต์ "+thShort(it.postDate)), h("span",null,nameOf(it.owner))),
+    st.next? h("span",{class:"meta"},"ส่ง"+st.next.kind+" "+thShort(st.next.date)):null,
+    (st.pill||st.late||st.soon||st.dueLate)? h("span",{class:"meta"},
+      st.pill? h("span",{class:"pill "+st.cls},st.pill):null,
+      st.dueLate? h("span",{class:"pill late"},st.dueLate):null,
+      st.late? h("span",{class:"pill late"},"เลยวันโพสต์"):null,
+      st.soon? h("span",{class:"pill soon"},"ใกล้วันโพสต์"):null):null);
+}
+function dueChip(it,d){
+  const f=FORMATS[it.format]||FORMATS.diary, over=d.date<todayStr();
+  return h("button",{type:"button",class:"chip due"+(over?" overdue":""),style:"--c:"+f.c,
+    title:"กำหนดส่ง"+d.kind+": "+it.title,"data-drag":it.id,"data-drag-field":d.field,onclick:e=>{e.stopPropagation();openItem(it.id);}},
+    h("span",{class:"t"},h("span",{class:"k"},"ส่ง"+d.kind),it.title||"ไม่มีชื่อ"));
+}
+const dropHandlers=new WeakMap();
+function dropZone(el, onDrop){ el.dataset.drop="1"; dropHandlers.set(el,onDrop); }
+
+/* pointer-based drag: same code for mouse and touch. Touch starts on a short hold so a swipe still scrolls. */
+const D={active:false,pending:false,force:false,start:null,ghost:null,src:null,over:null,x:0,y:0,timer:null,scroll:null,monthT:null,monthBtn:null};
+function dragBegin(){
+  const s=D.start; if(!s) return;
+  clearTimeout(D.timer);
+  D.active=true; D.src=s.el;
+  const r=s.el.getBoundingClientRect();
+  const g=s.el.cloneNode(true);
+  g.removeAttribute("data-drag"); g.classList.add("drag-ghost");
+  g.style.width=r.width+"px"; g.style.height=r.height+"px";
+  document.body.append(g);
+  D.ghost=g; s.offX=s.x-r.left; s.offY=s.y-r.top;
+  s.el.classList.add("drag-src"); document.body.classList.add("dragging");
+  dragPaint();
+  D.scroll=setInterval(dragAutoScroll,16);
+}
+function dragPaint(){
+  if(!D.ghost) return;
+  D.ghost.style.transform="translate("+(D.x-D.start.offX)+"px,"+(D.y-D.start.offY)+"px) rotate(1.5deg)";
+  const under=document.elementFromPoint(D.x,D.y);
+  const zone=under && under.closest("[data-drop]");
+  if(zone!==D.over){ if(D.over) D.over.classList.remove("drop"); if(zone) zone.classList.add("drop"); D.over=zone; }
+  const btn=under && under.closest("#prevM,#nextM");
+  if(btn!==D.monthBtn){
+    clearInterval(D.monthT); D.monthBtn=btn;
+    if(btn) D.monthT=setInterval(()=>{ const n=btn.id==="nextM"?1:-1; S.month=new Date(S.month.getFullYear(),S.month.getMonth()+n,1); D.force=true; render(); D.force=false; D.over=null; dragPaint(); },700);
+  }
+}
+function dragAutoScroll(){
+  const edge=48, sp=12;
+  const sc=$(".board-scroll");
+  if(sc){ const r=sc.getBoundingClientRect(); if(D.x<r.left+edge) sc.scrollLeft-=sp; else if(D.x>r.right-edge) sc.scrollLeft+=sp; }
+  if(D.y<edge) window.scrollBy(0,-sp); else if(D.y>window.innerHeight-edge) window.scrollBy(0,sp);
+}
+function dragEnd(drop){
+  clearTimeout(D.timer);
+  const s=D.start, was=D.active, zone=D.over;
+  if(was){
+    clearInterval(D.scroll); clearInterval(D.monthT); D.monthBtn=null;
+    if(D.ghost) D.ghost.remove(); D.ghost=null;
+    if(D.src) D.src.classList.remove("drag-src"); D.src=null;
+    if(zone) zone.classList.remove("drop"); D.over=null;
+    document.body.classList.remove("dragging");
+    /* the click that follows a drag must not open the card */
+    const stop=e=>{ e.stopPropagation(); e.preventDefault(); };
+    document.addEventListener("click",stop,true); setTimeout(()=>document.removeEventListener("click",stop,true),60);
+  }
+  D.active=false; D.start=null;
+  if(was && drop && zone && dropHandlers.has(zone)) dropHandlers.get(zone)(s.id,{field:s.field});
+  if(D.pending){ D.pending=false; render(); }
+}
+document.addEventListener("pointerdown",e=>{
+  if(e.button!==0 || S.readOnly || !S.db) return;
+  const el=e.target.closest && e.target.closest("[data-drag]"); if(!el) return;
+  D.start={el,id:el.dataset.drag,field:el.dataset.dragField||null,x:e.clientX,y:e.clientY,touch:e.pointerType!=="mouse"};
+  D.x=e.clientX; D.y=e.clientY;
+  if(D.start.touch) D.timer=setTimeout(dragBegin,260);
+});
+document.addEventListener("pointermove",e=>{
+  if(!D.start) return;
+  D.x=e.clientX; D.y=e.clientY;
+  if(D.active){ dragPaint(); return; }
+  const dist=Math.hypot(e.clientX-D.start.x,e.clientY-D.start.y);
+  if(D.start.touch){ if(dist>10) dragEnd(false); }
+  else if(dist>5) dragBegin();
+});
+document.addEventListener("pointerup",()=>{ if(D.start) dragEnd(true); });
+document.addEventListener("pointercancel",()=>{ if(D.start) dragEnd(false); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && D.active) dragEnd(false); });
+document.addEventListener("touchmove",e=>{ if(D.active) e.preventDefault(); },{passive:false});
+document.addEventListener("contextmenu",e=>{ if(D.active || (D.start && D.start.touch)) e.preventDefault(); });
+
+/* ---------- views ---------- */
+function welcome(){
+  if(!S.loaded || S.items.size) return null;
+  return h("div",{class:"welcome"},
+    h("h2",null,"ยังไม่มีงานในปฏิทิน"),
+    h("p",null,"กด \"+ งานใหม่\" หรือคลิกช่องวันที่ในปฏิทินเพื่อลงงานชิ้นแรก แต่ละชิ้นเดินตามขั้นของรูปแบบงาน"),
+    h("div",{class:"flow"},h("span",{class:"tag",style:"--c:var(--diary)"},"ISAN Diary"),h("span",{class:"tag",style:"--c:var(--motion)"},"ISAN Motion"),h("i",null,":"),
+      h("b",null,"ไอเดีย"),h("i",null,"›"),h("b",null,"บท"),h("i",null,"›"),h("b",null,"เสียง"),h("i",null,"›"),h("b",null,"คลิป (ส่งให้ลีโอ)"),h("i",null,"›"),h("b",null,"โพสต์")),
+    h("div",{class:"flow"},h("span",{class:"tag",style:"--c:var(--info)"},"Infographic"),h("i",null,":"),
+      h("b",null,"ไอเดีย"),h("i",null,"›"),h("b",null,"เนื้อหา"),h("i",null,"›"),h("b",null,"อินโฟ"),h("i",null,"›"),h("b",null,"โพสต์")));
+}
+
+const narrow = window.matchMedia("(max-width:720px)");
+narrow.addEventListener("change",()=>render());
+
+function renderCalendar(main){
+  const y=S.month.getFullYear(), m=S.month.getMonth();
+  const first=new Date(y,m,1), off=(first.getDay()+6)%7;
+  const start=new Date(y,m,1-off);
+  const last=new Date(y,m+1,0); const cells=Math.ceil((off+last.getDate())/7)*7;
+  const byDay=new Map();
+  const byDue=new Map();
+  for(const it of allItems()){ if(!visible(it)) continue; const k=it.postDate||""; if(!byDay.has(k)) byDay.set(k,[]); byDay.get(k).push(it);
+    if(!S.hideDues) for(const d of pendingDues(it)){ if(!byDue.has(d.date)) byDue.set(d.date,[]); byDue.get(d.date).push(dueChip(it,d)); } }
+  const t=todayStr();
+  main.append(welcome()||"");
+  if(narrow.matches){
+    const ag=h("div",{class:"agenda"});
+    for(let d=1; d<=last.getDate(); d++){
+      const key=ymd(new Date(y,m,d)); const list=byDay.get(key)||[]; const dues=byDue.get(key)||[];
+      if(!list.length && !dues.length && key!==t) continue;
+      const dt=new Date(y,m,d);
+      ag.append(h("div",{class:"ag-day"+(key===t?" today":"")},
+        h("h3",null,"วัน"+["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์"][dt.getDay()]+" "+d+" "+TH_MON_S[m]),
+        h("div",{class:"list"}, (list.length||dues.length)? [list.map(chip),dues] : h("div",{class:"empty-col"},"ไม่มีงานวันนี้"))));
+    }
+    if(!ag.children.length) ag.append(h("div",{class:"empty"},"เดือนนี้ยังไม่มีงาน"));
+    main.append(ag); return;
+  }
+  const grid=h("div",{class:"cal",role:"grid","aria-label":"ปฏิทินเดือน"});
+  TH_DOW.forEach(d=>grid.append(h("div",{class:"dow"},d)));
+  for(let i=0;i<cells;i++){
+    const d=new Date(start); d.setDate(start.getDate()+i); const key=ymd(d);
+    const list=byDay.get(key)||[];
+    const cell=h("div",{class:"day"+(d.getMonth()!==m?" other":"")+(key===t?" today":""),
+      onclick:()=>{ if(!S.readOnly && S.db) openNew(key); }, title:S.readOnly?"":"คลิกเพื่อลงงานวันที่ "+thShort(key)},
+      h("div",{class:"num"},h("span",null,d.getDate())), list.map(chip), byDue.get(key)||[]);
+    dropZone(cell, (id,p)=> p&&p.field ? moveDue(id,p.field,key) : moveDate(id,key));
+    grid.append(cell);
+  }
+  main.append(grid);
+}
+
+function renderBoard(main){
+  main.append(welcome()||"");
+  main.append(h("div",{class:"board-opts"},h("label",null,
+    h("input",{type:"checkbox",id:"hidePosted",checked:S.hidePosted,onchange:e=>{S.hidePosted=e.target.checked;store.set("hidePosted",S.hidePosted);render();}}),
+    "ซ่อนงานที่โพสต์แล้ว")));
+  const items=allItems().filter(visible);
+  const board=h("div",{class:"board"});
+  for(const col of COLS){
+    const list=items.filter(it=>col.map[flowOf(it)]===it.stage && !(S.hidePosted && it.posted));
+    const hint = col.k==="voice"?"เฉพาะคลิป":col.k==="make"?"คลิปรอ "+editorName()+" ทำ":null;
+    const el=h("div",{class:"col"},
+      h("h3",null,col.l,h("small",null,list.length+" ชิ้น")),
+      hint?h("div",{class:"hint"},hint):null,
+      list.length? list.map(card) : h("div",{class:"empty-col"},"ว่าง"));
+    dropZone(el, id=>{
+      const it=S.items.get(id); if(!it) return;
+      const to=col.map[flowOf(it)];
+      if(!to){ toast("Infographic ไม่มีขั้นเสียง"); return; }
+      moveStage(id,to);
+    });
+    board.append(el);
+  }
+  main.append(h("div",{class:"board-scroll"},board));
+}
+
+function row(it){
+  const f=FORMATS[it.format]||FORMATS.diary, st=status(it), d=parseYmd(it.postDate);
+  return h("button",{type:"button",class:"row",style:"--c:"+f.c,onclick:()=>openItem(it.id)},
+    h("span",{class:"date"}, d? [String(d.getDate()), h("small",null,TH_MON_S[d.getMonth()])] : "-"),
+    h("span",{style:"min-width:0;display:flex;flex-direction:column;gap:3px"},
+      h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
+      h("span",{class:"meta"},h("span",{class:"tag",style:"--c:"+f.c},f.label),h("span",null,"ขั้น"+stageLabel(it)),
+        st.next? h("span",null,"ส่ง"+st.next.kind+" "+thShort(st.next.date)) : null,
+        flowOf(it)==="video" && it.stage==="clip" ? null : h("span",null,nameOf(it.owner)))),
+    h("span",{class:"meta",style:"justify-content:flex-end"},
+      st.pill?h("span",{class:"pill "+st.cls},st.pill):null,
+      st.dueLate?h("span",{class:"pill late"},st.dueLate):null,
+      st.late?h("span",{class:"pill late"},"เลยวันโพสต์"):null,
+      st.soon?h("span",{class:"pill soon"},"ใกล้วันโพสต์"):null));
+}
+function renderMine(main){
+  if(!S.me){ main.append(h("div",{class:"empty"},"ล็อกอินด้วย Google เพื่อดูงานของคุณ")); return; }
+  const items=allItems().filter(it=>S.fmtOn[it.format]);
+  const waiting=items.filter(it=>{ const st=status(it);
+    if(it.posted) return false;
+    if(st.turn==="editor") return S.me===S.editorId;
+    return it.owner===S.me; });
+  const mine=items.filter(it=>it.owner===S.me && !it.posted && !waiting.includes(it));
+  const done=items.filter(it=>it.owner===S.me && it.posted).slice(-5).reverse();
+  const sec=(title,sub,list,emptyTxt)=>h("section",null,h("h2",null,title),h("p",{class:"sub"},sub),
+    h("div",{class:"list"}, list.length? list.map(row) : h("div",{class:"empty"},emptyTxt)));
+  main.append(h("div",{class:"mine"},
+    sec("รอฉันทำ", S.me===S.editorId?"งานที่เป็นของคุณ รวมคลิปที่พี่ๆ ส่งมาให้ทำ":"งานของคุณที่ถึงตาคุณ รวมคลิปที่รอคุณรีวิว", waiting, "ไม่มีงานค้างที่รอคุณ"),
+    h("div",{style:"display:flex;flex-direction:column;gap:20px;min-width:0"},
+      sec("งานของฉันที่อยู่ระหว่างทาง","ชิ้นที่รอคนอื่นอยู่ เช่น รอ"+editorName()+"ทำคลิป",mine,"ไม่มีงานที่รอคนอื่น"),
+      sec("โพสต์ล่าสุด","5 ชิ้นล่าสุดของคุณ",done,"ยังไม่มีงานที่โพสต์"))));
+}
+
+function render(){
+  if(D.active && !D.force){ D.pending=true; return; }
+  renderStrip(); renderBanners();
+  const main=$("#main"); main.replaceChildren();
+  if(S.noDb){ main.append(h("div",{class:"empty"},"ยังไม่มีข้อมูลให้แสดง")); return; }
+  if(!S.loaded && !S.slow){ main.append(h("div",{class:"empty"},"กำลังโหลดแผนงานของทีม...")); return; }
+  if(S.view==="board") renderBoard(main);
+  else if(S.view==="mine") renderMine(main);
+  else if(S.view==="kpi") renderKpi(main);
+  else renderCalendar(main);
+}
+
+/* ---------- KPI ----------
+   Numbers come from the "kpi/<YYYY-MM>" docs that Claude writes from the FB Graph API (daily);
+   per-post follows from "kpiFollows/<YYYY-MM>" (Claude reads them off FB Insights on request);
+   targets from "kpiTargets/<YYYY-MM>" (editor only). A card counts in the month of its postDate once it is closed with a post link. */
+const KM = [
+  {k:"posts",    l:"โพสต์",        tgt:true},
+  {k:"viewers",  l:"ผู้ชม",        tgt:true},
+  {k:"reactions",l:"รีแอค"},
+  {k:"comments", l:"คอมเมนต์"},
+  {k:"shares",   l:"แชร์"},
+  {k:"follows",  l:"ติดตาม",       tgt:true},
+  {k:"revenue",  l:"รายได้",       tgt:true}
+];
+const ymOf = d => d.getFullYear()+"-"+pad(d.getMonth()+1);
+const fmtN = (n,dg) => n==null||!isFinite(n) ? "–" : Number(n).toLocaleString("th-TH",{maximumFractionDigits:dg??0,minimumFractionDigits:dg??0});
+const median = a => { if(!a.length) return null; const s=[...a].sort((x,y)=>x-y), m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+
+function kAgg(ym, ownerId){
+  const doc=S.kpi[ym]||null, fol=S.kfol[ym]||{}, fx=doc&&doc.fx&&doc.fx.rate;
+  const items=[...S.items.values()].filter(it=>it.posted && safeUrl(it.postUrl) && (it.postDate||"").slice(0,7)===ym && S.fmtOn[it.format] && (!ownerId || it.owner===ownerId))
+    .sort((a,b)=>(a.postDate||"").localeCompare(b.postDate||""));
+  const a={posts:items.length, viewers:0, reactions:0, comments:0, shares:0, follows:0, usd:0, withData:0, folKnown:0, folViewers:0, list:[], viewerList:[]};
+  for(const it of items){
+    const m=doc&&doc.posts&&doc.posts[it.id];
+    const f=fol[it.id]; const fn=typeof f==="number"?f:null;
+    const unres=doc&&doc.unresolved&&doc.unresolved[it.id];
+    a.list.push({it,m,f:fn,unres});
+    if(fn!=null){ a.follows+=fn; a.folKnown++; if(m) a.folViewers+=m.viewers||0; }
+    if(!m) continue;
+    a.withData++; a.viewers+=m.viewers||0; a.reactions+=m.reactions||0; a.comments+=m.comments||0; a.shares+=m.shares||0; a.usd+=m.earnUsd||0;
+    a.viewerList.push(m.viewers||0);
+  }
+  a.revenue = fx ? a.usd*fx : null;
+  if(!ownerId){ a.follows = doc&&doc.pageFollows!=null ? doc.pageFollows : null; a.folKnown=a.posts; a.folViewers=a.viewers; }
+  else if(!a.folKnown) a.follows=null;
+  return a;
+}
+function kVal(a, k){
+  if(!S.kRate){
+    if(k==="posts") return a.posts;
+    return a[k];
+  }
+  if(k==="posts") return a.posts;
+  if(k==="viewers") return median(a.viewerList);
+  const v=a[k], base=k==="follows"?a.folViewers:a.viewers; if(v==null || !base) return null;
+  return v/base*1000;
+}
+function kFmt(a,k,v){
+  if(v==null) return "–";
+  if(k==="revenue") return "฿"+fmtN(v, S.kRate?2:0);
+  if(S.kRate && !["posts","viewers"].includes(k)) return fmtN(v,1);
+  return fmtN(v);
+}
+function kLabel(k){
+  const m=KM.find(x=>x.k===k).l;
+  if(!S.kRate) return m;
+  if(k==="viewers") return "ผู้ชมต่อโพสต์ (มัธยฐาน)";
+  if(k==="posts") return m;
+  return m+" ต่อผู้ชม 1,000";
+}
+function kBox(title, ownerId, ym, prevYm, isTeam){
+  const a=kAgg(ym,ownerId), p=kAgg(prevYm,ownerId);
+  const tdoc=S.ktg[ym]||{}; const tg=isTeam? (tdoc.team||{}) : ((tdoc.people||{})[ownerId]||{});
+  const rows=h("div",{class:"k-rows"});
+  for(const m of KM){
+    const v=kVal(a,m.k), pv=p.posts? kVal(p,m.k) : null;
+    let delta;
+    if(pv==null || v==null || a.posts===0) delta=h("span",{class:"k-delta none"},"");
+    else if(pv===0) delta=h("span",{class:"k-delta none"},"เดือนก่อน 0");
+    else { const d=(v-pv)/pv*100; delta=h("span",{class:"k-delta "+(d>=0?"up":"down")},(d>=0?"▲":"▼")+fmtN(Math.abs(d))+"% จาก"+TH_MON_S[+prevYm.slice(5)-1]); }
+    let extra=null, bar=null;
+    const t=m.tgt && !S.kRate ? tg[m.k] : null;
+    if(t){
+      const pct=v==null?0:v/t*100;
+      extra=h("small",null,"เป้า "+(m.k==="revenue"?"฿":"")+fmtN(t)+" ("+fmtN(pct)+"%)");
+      bar=h("div",{class:"k-bar"+(pct>=100?" done":"")},h("i",{style:"width:"+Math.min(100,pct)+"%"}));
+    }
+    let valEl=h("span",{class:"val"},kFmt(a,m.k,v));
+    if(m.k==="revenue" && !S.kRate && a.withData) valEl.append(h("small",null,"$"+fmtN(a.usd,2)));
+    let note=null;
+    if(m.k==="follows" && !isTeam && a.posts && a.folKnown<a.posts) note=h("small",null, a.folKnown? "ดึงแล้ว "+a.folKnown+"/"+a.posts+" โพสต์" : "รอดึงยอดจาก Insights");
+    if(m.k==="follows" && isTeam) note=h("small",null,"ผู้ติดตามใหม่ทั้งเพจ");
+    if(m.k==="revenue" && S.kpi[ym] && !(S.kpi[ym].fx&&S.kpi[ym].fx.rate)) note=h("small",null,"ยังไม่มีอัตราแลกเปลี่ยน");
+    rows.append(h("div",{class:"k-row"},h("span",{class:"lab"},kLabel(m.k)),valEl,
+      (delta.textContent||extra||note)? h("div",{class:"info"},extra,note,delta):null, bar));
+  }
+  const key=(ownerId||"team")+ym, open=S.kOpen.has(key);
+  const box=h("section",{class:"kbox"+(isTeam?" team":"")+(open&&a.posts?" open":""),"aria-label":title},
+    h("div",{class:"k-head"},h("h3",null,title),h("span",{class:"k-sub"},a.posts+" โพสต์"+(a.posts&&a.withData<a.posts?", มียอด "+a.withData:"")+(a.posts&&!p.posts?", ไม่มีโพสต์ "+TH_MON_S[+prevYm.slice(5)-1]+" ให้เทียบ":""))),
+    rows);
+  if(a.posts){
+    box.append(h("div",null,h("button",{class:"btn",type:"button","aria-expanded":String(open),onclick:()=>{ open?S.kOpen.delete(key):S.kOpen.add(key); render(); }},open?"ซ่อนรายโพสต์":"ดูโพสต์")));
+    if(open) box.append(kTable(a, isTeam, S.kpi[ym]));
+  }
+  return box;
+}
+function kTable(a, isTeam, doc){
+  const fx=doc&&doc.fx&&doc.fx.rate, today=todayStr();
+  const tb=h("tbody");
+  const sorted=[...a.list].sort((x,y)=>((y.m&&y.m.viewers)||0)-((x.m&&x.m.viewers)||0));
+  for(const r of sorted){
+    const it=r.it, m=r.m, link=safeUrl((m&&m.permalink)||it.postUrl);
+    const young=daysBetween(it.postDate,today)<7;
+    const name=h("td",null,link?h("a",{href:link,target:"_blank",rel:"noopener"},it.title||"ไม่มีชื่อ"):(it.title||"ไม่มีชื่อ"),
+      h("span",{class:"k-sub",style:"display:block"},thShort(it.postDate)+(isTeam?", "+nameOf(it.owner):"")),
+      r.unres? h("span",{class:"young"},"ลิงก์อ่านไม่ออก ใส่ลิงก์ /reel/ แทน") : !m? h("span",{class:"young"},"รอรอบดึงยอดถัดไป") : young? h("span",{class:"young"},"ลงไม่ถึง 7 วัน ยอดยังขึ้นได้"):null);
+    tb.append(h("tr",null,name,
+      h("td",null,m?fmtN(m.viewers):"–"), h("td",null,m?fmtN(m.reactions):"–"), h("td",null,m?fmtN(m.comments):"–"), h("td",null,m?fmtN(m.shares):"–"),
+      h("td",null,r.f!=null?fmtN(r.f):"–"), h("td",null,m&&fx?"฿"+fmtN(m.earnUsd*fx):"–")));
+  }
+  return h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
+    h("thead",null,h("tr",null,...["โพสต์","ผู้ชม","รีแอค","คอมเมนต์","แชร์","ติดตาม","รายได้"].map(x=>h("th",null,x)))), tb));
+}
+/* campaign box: all ad campaigns of the month (from kpi/<ym>.ads, Marketing API). Same shape as the team box,
+   with spend in place of revenue and baht per follower added. Not filtered by format: ads are not cards. */
+const KA = [
+  {k:"clips",l:"คลิปที่ยิง"}, {k:"reach",l:"คนเห็นแอด"}, {k:"reactions",l:"รีแอค"}, {k:"comments",l:"คอมเมนต์"},
+  {k:"shares",l:"แชร์"}, {k:"follows",l:"ติดตามจากแอด"}, {k:"spend",l:"ใช้จ่าย"}, {k:"cpf",l:"บาทต่อผู้ติดตาม"}
+];
+function kAdsVals(ads){
+  if(!ads || !ads.total) return null;
+  const t=Object.assign({clips:ads.clips||0}, ads.total);
+  t.cpf = t.follows ? t.spend/t.follows : null;
+  return t;
+}
+function kAdsVal(t,k){
+  if(!t) return null;
+  if(!S.kRate || ["clips","reach","cpf"].includes(k)) return t[k];
+  return t.reach ? t[k]/t.reach*1000 : null;
+}
+function kAdsFmt(k,v){
+  if(v==null) return "–";
+  if(k==="spend"||k==="cpf") return "฿"+fmtN(v, k==="cpf"||S.kRate?2:0);
+  if(S.kRate && !["clips","reach"].includes(k)) return fmtN(v,1);
+  return fmtN(v);
+}
+function kAdsBox(ym, prevYm){
+  const doc=S.kpi[ym], t=kAdsVals(doc&&doc.ads), p=kAdsVals(S.kpi[prevYm]&&S.kpi[prevYm].ads);
+  const rows=h("div",{class:"k-rows"});
+  for(const m of KA){
+    const v=kAdsVal(t,m.k), pv=kAdsVal(p,m.k);
+    let delta=null;
+    if(v!=null && pv!=null && pv!==0){ const d=(v-pv)/pv*100, good=m.k==="cpf"? d<=0 : d>=0;
+      delta=h("span",{class:"k-delta "+(good?"up":"down")},(d>=0?"▲":"▼")+fmtN(Math.abs(d))+"% จาก"+TH_MON_S[+prevYm.slice(5)-1]); }
+    const lab = S.kRate && !["clips","reach","cpf"].includes(m.k) ? m.l+" ต่อคนเห็น 1,000" : m.l;
+    rows.append(h("div",{class:"k-row"},h("span",{class:"lab"},lab),h("span",{class:"val"},kAdsFmt(m.k,v)), delta? h("div",{class:"info"},delta):null));
+  }
+  const key="ads"+ym, open=S.kOpen.has(key), cams=Object.entries((doc&&doc.ads&&doc.ads.campaigns)||{});
+  const sub = !doc ? "ยังไม่มียอด" : !doc.ads ? "ดึงยอดแอดไม่ได้" : !t ? "เดือนนี้ไม่มีแคมเปญ" : cams.length+" แคมเปญ"+(p?"":", ไม่มีแอด "+TH_MON_S[+prevYm.slice(5)-1]+" ให้เทียบ");
+  const box=h("section",{class:"kbox team"+(open&&cams.length?" open":""),"aria-label":"แคมเปญ"},
+    h("div",{class:"k-head"},h("h3",null,"แคมเปญ"),h("span",{class:"k-sub"},sub)), rows);
+  if(cams.length){
+    box.append(h("div",null,h("button",{class:"btn",type:"button","aria-expanded":String(open),onclick:()=>{ open?S.kOpen.delete(key):S.kOpen.add(key); render(); }},open?"ซ่อนรายแคมเปญ":"ดูแคมเปญและโพสต์")));
+    if(open){
+      const tb=h("tbody");
+      cams.sort((a,b)=>b[1].spend-a[1].spend).forEach(([id,c])=>tb.append(h("tr",null,
+        h("td",null,c.name||id,h("span",{class:"k-sub",style:"display:block"},(c.clips||[]).join(", "))),
+        h("td",null,fmtN(c.reach)),h("td",null,fmtN(c.reactions)),h("td",null,fmtN(c.comments)),h("td",null,fmtN(c.shares)),
+        h("td",null,fmtN(c.follows)),h("td",null,"฿"+fmtN(c.spend)),h("td",null,c.follows?"฿"+fmtN(c.spend/c.follows,2):"–"))));
+      box.append(h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
+        h("thead",null,h("tr",null,...["แคมเปญ","คนเห็น","รีแอค","คอมเมนต์","แชร์","ติดตาม","ใช้จ่าย","฿/ผู้ติดตาม"].map(x=>h("th",null,x)))),tb)));
+      const clips=Object.entries((doc.ads&&doc.ads.byClip)||{});
+      if(clips.length) box.append(kAdsClipTable(clips, doc, Object.fromEntries(cams)));
+    }
+  }
+  return box;
+}
+/* per-post table inside the campaign box: one row per boosted post, summed over campaigns */
+function kAdsClipTable(clips, doc, cams){
+  const byPost={}; for(const [iid,m] of Object.entries(doc.posts||{})) if(m.postId) byPost[m.postId]={iid,m};
+  const camTag=id=>{ const n=(cams[id]&&cams[id].name)||""; const x=n.match(/-([A-Z])\b/); return x?x[1]:n.slice(0,12); };
+  const tb=h("tbody");
+  clips.sort((a,b)=>(b[1].active-a[1].active)||(b[1].spend-a[1].spend)).forEach(([name,c])=>{
+    const hit=c.storyId&&byPost[c.storyId], it=hit&&S.items.get(hit.iid);
+    const link=safeUrl((hit&&hit.m.permalink)||(c.storyId?"https://www.facebook.com/"+c.storyId:""));
+    const title=(it&&it.title)||name;
+    const split=Object.entries(c.perCampaign||{}).map(([id,p])=>camTag(id)+" ฿"+fmtN(p.spend)+" ได้ "+fmtN(p.follows)).join(", ");
+    tb.append(h("tr",null,
+      h("td",null,link?h("a",{href:link,target:"_blank",rel:"noopener"},title):title,
+        h("span",{class:"k-sub",style:"display:block"},(c.since?"ยิงตั้งแต่ "+thShort(c.since):"")+(c.active?"":" (ปิดแล้ว)")),split?h("span",{class:"k-sub",style:"display:block"},split):null),
+      h("td",null,fmtN(c.reach)),h("td",null,fmtN(c.reactions)),h("td",null,fmtN(c.comments)),h("td",null,fmtN(c.shares)),
+      h("td",null,fmtN(c.follows)),h("td",null,"฿"+fmtN(c.spend)),h("td",null,c.follows?"฿"+fmtN(c.spend/c.follows,2):"–")));
+  });
+  return h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
+    h("thead",null,h("tr",null,...["โพสต์ที่ยิง","คนเห็น","รีแอค","คอมเมนต์","แชร์","ติดตาม","ใช้จ่าย","฿/ผู้ติดตาม"].map(x=>h("th",null,x)))),tb));
+}
+function kOwners(){
+  const ids=new Set(); for(const it of S.items.values()) if(it.owner) ids.add(it.owner);
+  return [...ids].sort((a,b)=>nameOf(a).localeCompare(nameOf(b),"th"));
+}
+function renderKpi(main){
+  const ym=ymOf(S.month), prevYm=ymOf(new Date(S.month.getFullYear(),S.month.getMonth()-1,1));
+  const doc=S.kpi[ym];
+  let note="ยังไม่มียอดของเดือนนี้ ระบบดึงยอดจาก Facebook วันละครั้ง";
+  if(doc && doc.fetchedAt){ const d=new Date(doc.fetchedAt); note="ยอด ณ "+d.getDate()+" "+TH_MON_S[d.getMonth()]+" "+pad(d.getHours())+":"+pad(d.getMinutes())+" น. นับเฉพาะการ์ดที่ปิดงานพร้อมลิงก์โพสต์ ตามวันโพสต์ในเดือนนี้"+(doc.fx&&doc.fx.rate?", 1 USD = "+fmtN(doc.fx.rate,2)+" บาท ("+doc.fx.source+")":""); }
+  const seg=h("div",{class:"seg"},
+    h("button",{type:"button","aria-pressed":String(!S.kRate),onclick:()=>{S.kRate=false;store.set("kRate",false);render();}},"ยอดรวม"),
+    h("button",{type:"button","aria-pressed":String(S.kRate),onclick:()=>{S.kRate=true;store.set("kRate",true);render();}},"ต่อผู้ชม 1,000"));
+  const isEditor=S.me && S.me===S.editorId && !S.readOnly && S.db;
+  main.append(h("div",{class:"kpi-bar"},h("span",{class:"note"},note),seg,
+    isEditor? h("button",{class:"btn",type:"button",onclick:()=>openTargets(ym)},"ตั้งเป้า "+TH_MON_S[S.month.getMonth()]) : null));
+  const grid=h("div",{class:"kpi-grid"});
+  grid.append(kBox("ทั้งทีม",null,ym,prevYm,true));
+  grid.append(kAdsBox(ym,prevYm));
+  for(const id of kOwners()) grid.append(kBox(nameOf(id),id,ym,prevYm,false));
+  main.append(grid);
+}
+
+/* targets dialog (editor only) */
+const tgDlg=$("#tgDlg"); let tgYm=null;
+function openTargets(ym){
+  tgYm=ym; const t=S.ktg[ym]||{}; const g=$("#tgGrid"); g.replaceChildren();
+  $("#tgTitle").textContent="ตั้งเป้า "+TH_MONTH[+ym.slice(5)-1]+" "+(+ym.slice(0,4)+543);
+  $("#tgErr").textContent="";
+  g.append(h("b",null,""),h("b",null,"โพสต์ (ชิ้น)"),h("b",null,"ผู้ชม"),h("b",null,"ติดตาม"),h("b",null,"รายได้ (บาท)"));
+  const rowFor=(key,label,vals)=>{ g.append(h("span",{style:"font-weight:600"},label));
+    for(const k of ["posts","viewers","follows","revenue"]) g.append(h("input",{type:"number",min:"0",step:"any",inputmode:"numeric","data-who":key,"data-k":k,value:vals&&vals[k]!=null?vals[k]:"","aria-label":label+" "+k})); };
+  rowFor("team","ทั้งทีม",t.team);
+  for(const id of kOwners()) rowFor(id,nameOf(id),(t.people||{})[id]);
+  tgDlg.showModal();
+}
+$("#tgForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const out={team:{},people:{}};
+  for(const inp of tgDlg.querySelectorAll("input[data-who]")){
+    const v=inp.value.trim(); if(v==="") continue;
+    const n=Number(v); if(!isFinite(n)||n<0){ $("#tgErr").textContent="ใส่ตัวเลขที่ไม่ติดลบ"; inp.focus(); return; }
+    if(inp.dataset.who==="team") out.team[inp.dataset.k]=n; else (out.people[inp.dataset.who] ||= {})[inp.dataset.k]=n;
+  }
+  out.updatedBy=S.me; out.updatedAt=new Date().toISOString();
+  $("#tgSave").disabled=true;
+  try{ await queueWrite("tg"+tgYm,()=>S.db.doc("kpiTargets/"+tgYm).set(out)); tgDlg.close(); toast("บันทึกเป้าแล้ว"); }
+  catch(err){ $("#tgErr").textContent=writeErr(err); }
+  finally{ $("#tgSave").disabled=false; }
+});
+$("#tgClose").addEventListener("click",()=>tgDlg.close());
+$("#tgCancel").addEventListener("click",()=>tgDlg.close());
+
+/* ---------- dialog ---------- */
+const dlg=$("#dlg");
+let draft=null, delArmed=null;
+
+function openNew(date){
+  draft={id:null, title:"", format:"diary", owner:S.me||"", postDate:date||todayStr(), voiceDue:"", clipDue:"", coverDue:"", coverUrl:"", stage:"idea",
+    driveUrl:"", workUrl:"", postUrl:"", note:"", clipState:null, posted:false, log:[]};
+  fillDialog({});
+}
+function openItem(id, opts){
+  const it=S.items.get(id); if(!it) return;
+  draft=JSON.parse(JSON.stringify(it));
+  fillDialog(opts||{});
+}
+function fillDialog(opts){
+  $("#fErr").textContent="";
+  $("#fTitle").value=draft.title||"";
+  renderFormatSeg(); renderOwnerSel();
+  $("#fDate").value=draft.postDate||"";
+  $("#fVoiceDue").value=draft.voiceDue||""; $("#fClipDue").value=draft.clipDue||""; $("#fCoverDue").value=draft.coverDue||""; $("#fCoverUrl").value=draft.coverUrl||""; syncDue();
+  renderStageSteps();
+  $("#fDrive").value=draft.driveUrl||""; $("#fWork").value=draft.workUrl||""; $("#fPost").value=draft.postUrl||""; $("#fNote").value=draft.note||"";
+  syncLinks(); renderAction(opts);
+  const log=$("#fLog"); log.replaceChildren();
+  (draft.log||[]).slice().reverse().forEach(l=>{
+    const d=new Date(l.at);
+    log.append(h("li",null,h("b",null,nameOf(l.by))," "+l.text+", "+d.getDate()+" "+TH_MON_S[d.getMonth()]+" "+pad(d.getHours())+":"+pad(d.getMinutes())));
+  });
+  $("#logWrap").hidden=!(draft.log&&draft.log.length);
+  const canDel = draft.id && (S.isOwner || draft.owner===S.me) && !S.readOnly;
+  $("#delBtn").hidden=!canDel; disarmDel();
+  const ro=S.readOnly||!S.db;
+  dlg.querySelectorAll("input,select,textarea").forEach(e=>e.disabled=ro);
+  $("#saveBtn").hidden=ro;
+  if(!dlg.open) dlg.showModal();
+  if(opts.handoff){ const f=$("#fDrive"); f.focus(); $("#fErr").textContent="ใส่ลิงก์โฟลเดอร์ Drive ก่อนส่งงานให้"+editorName()+"ทำคลิป"; }
+  else if(!draft.id) $("#fTitle").focus();
+}
+function renderFormatSeg(){
+  const seg=$("#fFormat"); seg.replaceChildren();
+  for(const [k,f] of Object.entries(FORMATS)){
+    seg.append(h("button",{type:"button","aria-pressed":String(draft.format===k),style:"--c:"+f.c,onclick:()=>{
+      if(draft.format===k) return;
+      const oldIdx=stageIdx(draft); draft.format=k;
+      const st=stagesOf(draft); const ni=Math.min(oldIdx,st.length-1);
+      draft.stage = draft.stage==="post" ? "post" : st[Math.max(0,ni)][0];
+      if(flowOf(draft)!=="video") draft.clipState=null;
+      renderFormatSeg(); renderStageSteps(); renderAction({}); syncLinks(); syncDue();
+    }},h("span",{class:"dot"}),f.label,h("span",{style:"color:var(--muted);font-weight:400"}," "+f.sub)));
+  }
+}
+function renderOwnerSel(){
+  const sel=$("#fOwner"); sel.replaceChildren();
+  const ids=memberIds(); if(S.me && !ids.includes(S.me)) ids.unshift(S.me);
+  if(draft.owner && !ids.includes(draft.owner)) ids.push(draft.owner);
+  if(!ids.length) sel.append(h("option",{value:""},"ยังไม่มีสมาชิก"));
+  for(const id of ids) sel.append(h("option",{value:id},nameOf(id)+(id===S.me?" (ฉัน)":"")));
+  sel.value=draft.owner||"";
+}
+function renderStageSteps(){
+  const box=$("#fStage"); box.replaceChildren();
+  const cur=stageIdx(draft);
+  stagesOf(draft).forEach(([k,l],i)=>{
+    box.append(h("button",{type:"button",class:i<cur?"past":"","aria-pressed":String(k===draft.stage),onclick:()=>{
+      if(k===draft.stage) return;
+      if(flowOf(draft)==="video" && k==="clip" && stageIdx(draft)<i && !safeUrl($("#fDrive").value.trim())){
+        $("#fErr").textContent="ใส่ลิงก์โฟลเดอร์ Drive ก่อนส่งงานให้"+editorName()+"ทำคลิป"; $("#fDrive").focus(); return;
+      }
+      Object.assign(draft, stageChange(draft,k)); draft._stageMoved=true;
+      $("#fErr").textContent=""; renderStageSteps(); renderAction({});
+    }},l));
+  });
+}
+function syncDue(){
+  const vid=flowOf(draft)==="video";
+  $("#voiceDueF").hidden=!vid; $("#coverDueF").hidden=!vid; $("#coverUrlF").hidden=!vid;
+  $("#clipDueLbl").textContent = vid? "วันอัปคลิป (กำหนดส่ง)" : "วันส่งอินโฟ (กำหนดส่ง)";
+}
+function syncLinks(){
+  const vid=flowOf(draft)==="video";
+  $("#fWorkLbl").textContent = vid? "ลิงก์คลิป (ลีโอแนบตอนส่งรีวิว)" : "ลิงก์ไฟล์อินโฟ";
+  [["#fDrive","#fDriveGo"],["#fWork","#fWorkGo"],["#fCoverUrl","#fCoverGo"],["#fPost","#fPostGo"]].forEach(([i,a])=>{
+    const u=safeUrl($(i).value.trim()); const el=$(a); el.hidden=!u; if(u) el.href=u;
+  });
+}
+["#fDrive","#fWork","#fCoverUrl","#fPost"].forEach(s=>$(s).addEventListener("input",syncLinks));
+
+/* contextual action box: handoff, editor send, owner review, mark posted */
+function renderAction(opts){
+  const box=$("#fAction"); box.replaceChildren();
+  if(!draft.id || S.readOnly) return;
+  const vid=flowOf(draft)==="video";
+  const owner=nameOf(draft.owner), ed=editorName();
+  let a=null;
+  if(vid && draft.stage==="voice"){
+    a=h("div",{class:"action"},h("h4",null,"เสียงเสร็จแล้ว ส่งให้"+ed+"ทำคลิป"),
+      h("p",null,"ใส่ลิงก์โฟลเดอร์ Drive ที่มี Note, บท และไฟล์เสียงด้านล่างก่อนกดส่ง"),
+      h("div",{class:"acts"},h("button",{class:"btn primary",type:"button",onclick:()=>doAction("handoff")},"ส่งให้"+ed+"ทำคลิป")));
+  } else if(vid && draft.stage==="clip" && (draft.clipState==="queue"||draft.clipState==="changes"||!draft.clipState)){
+    const lastFix=[...(draft.log||[])].reverse().find(l=>l.kind==="changes");
+    a=h("div",{class:"action"},h("h4",null,draft.clipState==="changes"?"เจ้าของขอแก้คลิป":"คลิปรอ"+ed+"ทำ"),
+      lastFix? h("p",{style:"color:var(--fg)"},"คำติ: "+lastFix.note) : h("p",null,"ทำคลิปเสร็จแล้ว แนบลิงก์คลิปในช่อง \"ลิงก์คลิป\" แล้วกดส่งรีวิว"),
+      h("div",{class:"acts"},h("button",{class:"btn primary",type:"button",onclick:()=>doAction("toReview")},"ส่งคลิปให้"+owner+"รีวิว")));
+  } else if(vid && draft.stage==="clip" && draft.clipState==="review"){
+    const ta=h("textarea",{id:"fixNote",placeholder:"ถ้าขอแก้ พิมพ์คำติตรงนี้ เช่น นาที 0:42 ตัวเลขผิด"});
+    a=h("div",{class:"action"},h("h4",null,"คลิปพร้อมรีวิว"),h("p",null,"เปิดลิงก์คลิปดูก่อน แล้วเลือกผ่านหรือขอแก้"),ta,
+      h("div",{class:"acts"},
+        h("button",{class:"btn primary",type:"button",onclick:()=>doAction("approve")},"ผ่าน พร้อมโพสต์"),
+        h("button",{class:"btn",type:"button",onclick:()=>doAction("changes")},"ขอแก้")));
+  } else if(draft.stage==="post" && !draft.posted){
+    a=h("div",{class:"action"},h("h4",null,"รอโพสต์"),h("p",null,"โพสต์แล้ว ใส่ลิงก์โพสต์จริงในช่องด้านล่าง แล้วกดปิดงาน"),
+      h("div",{class:"acts"},h("button",{class:"btn primary",type:"button",onclick:()=>doAction("posted")},"โพสต์แล้ว ปิดงาน")));
+  }
+  if(a) box.append(a);
+}
+
+function collect(){
+  const d=Object.assign({}, draft);
+  d.title=$("#fTitle").value.trim(); d.owner=$("#fOwner").value; d.postDate=$("#fDate").value;
+  const isVid=flowOf(d)==="video";
+  d.voiceDue = isVid ? $("#fVoiceDue").value : ""; d.clipDue=$("#fClipDue").value;
+  d.coverDue = isVid ? $("#fCoverDue").value : ""; d.coverUrl = isVid ? $("#fCoverUrl").value.trim() : "";
+  d.driveUrl=$("#fDrive").value.trim(); d.workUrl=$("#fWork").value.trim(); d.postUrl=$("#fPost").value.trim(); d.note=$("#fNote").value.trim();
+  return d;
+}
+function validate(d){
+  if(!d.title) return "ใส่ชื่อเรื่องก่อน";
+  if(!d.postDate) return "เลือกวันโพสต์";
+  const ck=flowOf(d)==="video"?"คลิป":"อินโฟ";
+  if(d.voiceDue && d.clipDue && d.voiceDue>d.clipDue) return "วันอัปเสียงต้องมาก่อนวันอัปคลิป";
+  if(d.voiceDue && d.voiceDue>d.postDate) return "วันอัปเสียงต้องไม่เลยวันโพสต์";
+  if(d.clipDue && d.clipDue>d.postDate) return "วันส่ง"+ck+"ต้องไม่เลยวันโพสต์";
+  if(d.coverDue && d.coverDue>d.postDate) return "วันส่งปกต้องไม่เลยวันโพสต์";
+  for(const [k,l] of [["driveUrl","ลิงก์ Drive"],["workUrl","ลิงก์คลิป/ไฟล์"],["coverUrl","ลิงก์ปกคลิป"],["postUrl","ลิงก์โพสต์"]]) if(d[k] && !safeUrl(d[k])) return l+" ต้องขึ้นต้นด้วย https://";
+  if(flowOf(d)==="video" && stageIdx(d)>=stageIdx(d,"clip") && d.stage!=="post" && !safeUrl(d.driveUrl)) return "ใส่ลิงก์โฟลเดอร์ Drive ก่อนส่งงานให้"+editorName()+"ทำคลิป";
+  return null;
+}
+function describeChanges(prev,d){
+  const out=[];
+  if(prev.stage!==d.stage) out.push(stageText(d,d.stage));
+  if(prev.postDate!==d.postDate) out.push("เลื่อนวันโพสต์เป็น "+thShort(d.postDate));
+  if((prev.voiceDue||"")!==(d.voiceDue||"")) out.push(d.voiceDue?"ตั้งวันอัปเสียง "+thShort(d.voiceDue):"ลบวันอัปเสียง");
+  if((prev.clipDue||"")!==(d.clipDue||"")) out.push(d.clipDue?"ตั้งวันส่ง"+(flowOf(d)==="video"?"คลิป":"อินโฟ")+" "+thShort(d.clipDue):"ลบวันส่ง"+(flowOf(d)==="video"?"คลิป":"อินโฟ"));
+  if((prev.coverDue||"")!==(d.coverDue||"")) out.push(d.coverDue?"ตั้งวันส่งปก "+thShort(d.coverDue):"ลบวันส่งปก");
+  if((prev.coverUrl||"")!==(d.coverUrl||"")) out.push(d.coverUrl?"แนบลิงก์ปกคลิป":"ลบลิงก์ปกคลิป");
+  if(prev.owner!==d.owner) out.push("เปลี่ยนเจ้าของเป็น "+nameOf(d.owner));
+  if(prev.format!==d.format) out.push("เปลี่ยนรูปแบบเป็น "+FORMATS[d.format].label);
+  return out.join(", ")||"แก้รายละเอียด";
+}
+async function persist(d, logText, logExtra){
+  const err=validate(d); if(err){ $("#fErr").textContent=err; return false; }
+  const isNew=!d.id; const id=d.id || S.db.collection("items").doc().id;
+  const prev=S.items.get(id);
+  const body=Object.assign({}, d); delete body.id; delete body._stageMoved;
+  const text=logText || (isNew?"ลงงานใหม่":describeChanges(prev||{},d));
+  const entry=Object.assign(logEntry(text), logExtra||{});
+  body.log=(prev?.log||d.log||[]).slice(-29).concat([entry]);
+  if(isNew){ body.createdBy=S.me; body.createdAt=new Date().toISOString(); }
+  $("#saveBtn").disabled=true;
+  try{ await saveItem(id, body); dlg.close(); toast(isNew?"ลงงานแล้ว":"บันทึกแล้ว"); return true; }
+  catch(e){ $("#fErr").textContent=writeErr(e); return false; }
+  finally{ $("#saveBtn").disabled=false; }
+}
+async function doAction(kind){
+  const d=collect(); const ed=editorName();
+  if(kind==="handoff"){
+    if(!safeUrl(d.driveUrl)){ $("#fErr").textContent="ใส่ลิงก์โฟลเดอร์ Drive ก่อนส่งงานให้"+ed+"ทำคลิป"; $("#fDrive").focus(); return; }
+    d.stage="clip"; d.clipState="queue"; d.posted=false;
+    await persist(d,"ส่งงานให้"+ed+"ทำคลิป");
+  } else if(kind==="toReview"){
+    if(!safeUrl(d.workUrl)){ $("#fErr").textContent="แนบลิงก์คลิปก่อนส่งรีวิว"; $("#fWork").focus(); return; }
+    d.clipState="review"; await persist(d,"ส่งคลิปให้รีวิว");
+  } else if(kind==="approve"){
+    d.stage="post"; d.clipState="approved"; d.posted=false; await persist(d,"รีวิวผ่าน พร้อมโพสต์");
+  } else if(kind==="changes"){
+    const note=($("#fixNote")?.value||"").trim();
+    if(!note){ $("#fErr").textContent="พิมพ์คำติก่อนกดขอแก้"; $("#fixNote")?.focus(); return; }
+    d.clipState="changes"; await persist(d,"ขอแก้คลิป",{kind:"changes",note});
+  } else if(kind==="posted"){
+    if(!safeUrl(d.postUrl)){ $("#fErr").textContent="ใส่ลิงก์โพสต์จริงก่อนปิดงาน"; $("#fPost").focus(); return; }
+    d.posted=true; await persist(d,"โพสต์แล้ว");
+  }
+}
+$("#form").addEventListener("submit",e=>{ e.preventDefault(); if(S.readOnly) return; persist(collect()); });
+$("#closeDlg").addEventListener("click",()=>dlg.close());
+$("#cancelBtn").addEventListener("click",()=>dlg.close());
+function disarmDel(){ const b=$("#delBtn"); b.classList.remove("armed"); b.textContent="ลบงานนี้"; clearTimeout(delArmed); delArmed=null; }
+$("#delBtn").addEventListener("click",async()=>{
+  const b=$("#delBtn");
+  if(!delArmed){ b.classList.add("armed"); b.textContent="กดอีกครั้งเพื่อยืนยันลบ"; delArmed=setTimeout(disarmDel,4000); return; }
+  disarmDel();
+  try{ await queueWrite(draft.id,()=>S.db.doc("items/"+draft.id).delete()); dlg.close(); toast("ลบงานแล้ว"); }
+  catch(e){ $("#fErr").textContent=writeErr(e); }
+});
+
+/* ---------- nav ---------- */
+function setViewFromHash(){
+  const v=(location.hash||"").slice(1);
+  S.view = ["calendar","board","mine","kpi"].includes(v)? v : (store.get("view","calendar"));
+  store.set("view",S.view); render();
+}
+window.addEventListener("hashchange",setViewFromHash);
+$("#prevM").addEventListener("click",()=>{ S.month=new Date(S.month.getFullYear(),S.month.getMonth()-1,1); render(); });
+$("#nextM").addEventListener("click",()=>{ S.month=new Date(S.month.getFullYear(),S.month.getMonth()+1,1); render(); });
+$("#todayBtn").addEventListener("click",()=>{ const t=new Date(); S.month=new Date(t.getFullYear(),t.getMonth(),1); render(); });
+$("#ownerFilter").addEventListener("change",e=>{ S.ownerFilter=e.target.value; render(); });
+$("#showDues").addEventListener("change",e=>{ S.hideDues=!e.target.checked; store.set("hideDues",S.hideDues); render(); });
+$("#newBtn").addEventListener("click",()=>{
+  const t=new Date(); const inMonth = S.view==="calendar" && (S.month.getMonth()!==t.getMonth()||S.month.getFullYear()!==t.getFullYear());
+  openNew(inMonth? ymd(S.month) : todayStr());
+});
+
+/* ---------- boot ---------- */
+const t0=new Date(); S.month=new Date(t0.getFullYear(),t0.getMonth(),1);
+setViewFromHash();
+
+function refreshProfiles(){
+  // ชื่อจากบัญชี Google เก็บในเอกสาร members (ช่อง name) ใช้แทนเมื่อคนนั้นยังไม่ตั้งชื่อเรียก
+  const p={}; for(const [id,m] of S.members) if(m.name) p[id]={name:m.name};
+  S.profiles=p;
+}
+
+const auth=firebase.auth();
+function signIn(){
+  const pv=new firebase.auth.GoogleAuthProvider(); pv.setCustomParameters({prompt:"select_account"});
+  auth.signInWithPopup(pv).catch(e=>{
+    const c=e&&e.code;
+    if(c==="auth/popup-blocked"||c==="auth/operation-not-supported-in-this-environment") return auth.signInWithRedirect(pv);
+    if(c!=="auth/popup-closed-by-user"&&c!=="auth/cancelled-popup-request") toast("ล็อกอินไม่สำเร็จ ลองอีกครั้ง");
+  });
+}
+function signOut(){ auth.signOut(); }
+
+let unsubs=[];
+function stopAll(){ unsubs.forEach(u=>{try{u()}catch(e){}}); unsubs=[]; }
+
+function renderAuthBtn(){
+  const b=$("#authBtn"); b.hidden=false;
+  if(S.me){ b.textContent="ออกจากระบบ"; b.title=S.me; b.onclick=signOut; }
+  else { b.textContent="ล็อกอิน"; b.title=""; b.onclick=signIn; }
+}
+
+let slowT=null;
+function start(user){
+  stopAll(); clearTimeout(slowT);
+  Object.assign(S,{items:new Map(),members:new Map(),profiles:{},editorId:null,kpi:{},kfol:{},ktg:{},
+    me:null,isOwner:false,db:null,readOnly:false,loaded:false,slow:false,noDb:true,denied:false});
+  if(!user){ renderAuthBtn(); render(); return; }
+  S.me=String(user.email||"").toLowerCase();
+  renderAuthBtn(); render();
+  const db=firebase.firestore();
+  const denied=e=>{
+    if(e && e.code==="permission-denied"){ clearTimeout(slowT); S.denied=true; S.noDb=true; S.db=null; stopAll(); render(); return true; }
+    return false;
+  };
+  slowT=setTimeout(()=>{ S.slow=true; render(); },10000);
+
+  function open(){
+    S.db=db; S.noDb=false;
+    // เก็บชื่อจากบัญชี Google ไว้ให้คนอื่นเห็น (merge จึงไม่ทับชื่อเรียกที่ตั้งเอง)
+    db.doc("members/"+S.me).set({name:user.displayName||S.me,email:S.me},{merge:true}).catch(()=>{});
+    const got={items:false,members:false};
+    const settle=(k,snap)=>{ if(!snap.metadata.fromCache) got[k]=true; if(got.items&&got.members&&!S.loaded){ S.loaded=true; clearTimeout(slowT); S.slow=false; } };
+    unsubs.push(db.collection("items").onSnapshot(snap=>{
+      S.items=new Map(snap.docs.map(d=>[d.id,Object.assign({id:d.id},d.data())]));
+      settle("items",snap); render();
+    },e=>{ if(!denied(e)){ clearTimeout(slowT); S.loaded=true; render(); toast("โหลดงานไม่สำเร็จ ลองเปิดหน้าใหม่"); } }));
+    unsubs.push(db.collection("members").onSnapshot(snap=>{
+      S.members=new Map(snap.docs.map(d=>[d.id,d.data()]));
+      refreshProfiles(); settle("members",snap); render();
+    },e=>{ got.members=true; }));
+    const kSub=(col,key)=>db.collection(col).onSnapshot(snap=>{ S[key]=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()])); if(S.view==="kpi") render(); },()=>{});
+    unsubs.push(kSub("kpi","kpi"),kSub("kpiFollows","kfol"),kSub("kpiTargets","ktg"));
+    unsubs.push(db.doc("meta/config").onSnapshot(snap=>{
+      const c=snap.exists?snap.data():{};
+      S.editorId=c.editorId||null; render();
+    },()=>{}));
+  }
+
+  // ด่านแรก: อ่านรายชื่อทีม ถ้าอีเมลไม่อยู่ในรายชื่อ กฎของฐานข้อมูลจะปฏิเสธ
+  unsubs.push(db.doc("meta/access").onSnapshot(snap=>{
+    const a=snap.exists?snap.data():{};
+    const admins=(a.admins||[]).map(x=>String(x).toLowerCase());
+    S.isOwner=admins.includes(S.me)||S.me==="innovationhubkku@gmail.com";
+    if(!S.db) open();
+    render();
+  },e=>{ if(!denied(e)){ clearTimeout(slowT); S.loaded=true; render(); toast("โหลดข้อมูลไม่สำเร็จ ลองเปิดหน้าใหม่"); } }));
+}
+
+auth.getRedirectResult().catch(()=>{});
+auth.onAuthStateChanged(start);
+})();
+</script>
+</body>
+</html>
