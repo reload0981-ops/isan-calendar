@@ -53,6 +53,16 @@ button{cursor:pointer}
 .tabs{display:flex;gap:4px;background:rgba(255,255,255,.08);padding:4px;border-radius:999px}
 .tabs a{color:var(--brand-fg);text-decoration:none;padding:6px 14px;border-radius:999px;font-weight:500;font-size:14px;white-space:nowrap}
 .tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-fg)}
+.mast .btn:not(.primary){background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35);color:var(--brand-fg)}
+.mast .btn:not(.primary):hover{background:rgba(255,255,255,.2)}
+#meBtn{font-size:18px;line-height:1;padding:6px 10px}
+.em-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px}
+.em-grid button{font-size:24px;line-height:1;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.em-grid button:hover{background:var(--surface-2)}
+.em-grid button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent);background:var(--surface-2)}
+.em-own{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.em-own input{width:90px;font-size:22px;text-align:center;padding:4px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.em-prev{font-size:40px;line-height:1}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 14px;font-weight:500}
 .btn:hover{background:var(--surface-2)}
 .btn.primary{background:var(--accent);color:var(--accent-fg);border-color:transparent;font-weight:600}
@@ -96,6 +106,12 @@ main{padding-block:16px 48px}
 .chip .t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
 .chip .s{display:flex;gap:6px;font-size:11px;color:var(--fg);font-weight:600}
 .chip.posted{opacity:.6}
+/* อิโมจิเจ้าของงาน: กล่องซ้าย เว้นจากขอบบน ล่าง ซ้ายเท่ากัน */
+.chip.has-em{display:flex;align-items:center;gap:7px;padding:5px 7px 5px 5px}
+.chip .em{flex:none;width:34px;height:34px;border-radius:6px;background:var(--surface);display:grid;place-items:center;font-size:21px;line-height:1;font-weight:700;color:var(--muted)}
+.chip .tx{flex:1;min-width:0}
+.agenda .chip.has-em{padding:6px 10px 6px 6px}
+.agenda .chip .em{width:40px;height:40px;font-size:25px}
 .chip.posted .t{text-decoration:line-through}
 .chip:hover{background:color-mix(in srgb,var(--c) 24%,var(--surface))}
 .chip.late{box-shadow:inset 0 0 0 1.5px var(--danger)}
@@ -251,8 +267,6 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
   .grid2{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-#authBtn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35);color:var(--brand-fg)}
-#authBtn:hover{background:rgba(255,255,255,.2)}
 </style>
 </head>
 <body>
@@ -267,6 +281,7 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
       <a href="#kpi" data-view="kpi">KPI</a>
     </nav>
     <button class="btn primary" id="newBtn" type="button">+ งานใหม่</button>
+    <button class="btn" id="meBtn" type="button" hidden title="เลือกอิโมจิของฉัน" aria-label="เลือกอิโมจิของฉัน"></button>
     <button class="btn" id="authBtn" type="button" hidden></button>
   </div>
 </header>
@@ -331,6 +346,18 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
     <div class="dlg-body"><p class="k-sub" style="margin:0">เว้นว่าง = ไม่มีเป้า ช่องนั้นจะเทียบกับเดือนก่อนอย่างเดียว เป้าทีมตั้งแยก ไม่ได้รวมจากรายคน</p>
       <div class="tg-wrap"><div class="tg-grid" id="tgGrid"></div></div><div class="err" id="tgErr" role="alert"></div></div>
     <div class="dlg-foot"><span class="sp"></span><button class="btn ghost" type="button" id="tgCancel">ยกเลิก</button><button class="btn primary" type="submit" id="tgSave">บันทึกเป้า</button></div>
+  </form>
+</dialog>
+
+<dialog id="emDlg" aria-labelledby="emTitle">
+  <form class="dlg" id="emForm" method="dialog">
+    <div class="dlg-head"><h2 id="emTitle" style="margin:0;font-family:var(--font-display);font-size:19px;flex:1">อิโมจิของฉัน</h2>
+      <button class="icon-btn" type="button" id="emClose" aria-label="ปิด"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3 3 13"/></svg></button></div>
+    <div class="dlg-body"><p class="k-sub" style="margin:0">อิโมจินี้จะขึ้นหน้างานของคุณในปฏิทิน ให้ทีมเห็นว่าเป็นของใคร</p>
+      <div class="em-grid" id="emGrid"></div>
+      <div class="em-own"><span class="em-prev" id="emPrev"></span><label for="emInput">หรือพิมพ์อิโมจิเอง</label><input id="emInput" maxlength="16" autocomplete="off"></div>
+      <div class="err" id="emErr" role="alert"></div></div>
+    <div class="dlg-foot"><span class="sp"></span><button class="btn ghost" type="button" id="emCancel">ยกเลิก</button><button class="btn primary" type="submit">บันทึก</button></div>
   </form>
 </dialog>
 
@@ -413,6 +440,10 @@ function nameOf(id){
   const m=S.members.get(id); if(m && m.nick) return m.nick;
   const p=S.profiles[id]; return (p && p.name) || "สมาชิก";
 }
+/* อิโมจิเจ้าของงาน: ที่ตั้งไว้ใน members ถ้ายังไม่ตั้งใช้ตัวแรกของชื่อเรียก */
+const firstGlyph = t => { t=String(t||"").trim(); if(!t) return "";
+  try{ return [...new Intl.Segmenter("th",{granularity:"grapheme"}).segment(t)][0].segment; }catch(e){ return [...t][0]; } };
+function emojiOf(id){ if(!id) return ""; const m=S.members.get(id); return (m&&m.emoji) || firstGlyph(nameOf(id)).toUpperCase(); }
 const editorName = () => S.editorId ? nameOf(S.editorId) : "ลีโอ";
 
 let toastT;
@@ -580,10 +611,13 @@ function memberIds(){
 function dragProps(id){ return {"data-drag":id}; }
 function chip(it){
   const f=FORMATS[it.format]||FORMATS.diary, st=status(it);
-  const c=h("button",Object.assign({type:"button",class:"chip"+(st.pill==="โพสต์แล้ว"?" posted":"")+(st.late?" late":""),style:"--c:"+f.c,
-    title:it.title+", "+f.label+", "+stageLabel(it),onclick:e=>{e.stopPropagation();openItem(it.id);}},dragProps(it.id)),
-    h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
-    h("span",{class:"s"},h("span",null,stageLabel(it)), h("span",{style:"color:var(--muted);font-weight:500"},nameOf(it.owner))));
+  const em=emojiOf(it.owner);
+  const c=h("button",Object.assign({type:"button",class:"chip"+(em?" has-em":"")+(st.pill==="โพสต์แล้ว"?" posted":"")+(st.late?" late":""),style:"--c:"+f.c,
+    title:it.title+", "+f.label+", "+stageLabel(it)+", "+nameOf(it.owner),onclick:e=>{e.stopPropagation();openItem(it.id);}},dragProps(it.id)),
+    em? h("span",{class:"em","aria-hidden":"true",text:em}):null,
+    h("span",{class:"tx"},
+      h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
+      h("span",{class:"s"},h("span",null,stageLabel(it)), h("span",{style:"color:var(--muted);font-weight:500"},nameOf(it.owner)))));
   return c;
 }
 function card(it){
@@ -792,7 +826,7 @@ function renderMine(main){
 
 function render(){
   if(D.active && !D.force){ D.pending=true; return; }
-  renderStrip(); renderBanners();
+  renderStrip(); renderBanners(); renderMeBtn();
   const main=$("#main"); main.replaceChildren();
   if(S.noDb){ main.append(h("div",{class:"empty"},"ยังไม่มีข้อมูลให้แสดง")); return; }
   if(!S.loaded && !S.slow){ main.append(h("div",{class:"empty"},"กำลังโหลดแผนงานของทีม...")); return; }
@@ -1011,6 +1045,34 @@ function renderKpi(main){
 }
 
 /* targets dialog (editor only) */
+/* ---------- อิโมจิของฉัน ---------- */
+const EMOJIS=["😀","😎","🤓","🥳","😺","🐶","🐱","🦊","🐼","🐨","🐯","🦁","🐸","🐵","🐧","🦉","🦄","🐝","🐢","🐙","🐳","🦖","🌻","🌵","🍀","🌈","⭐","🔥","⚡","🌙","🍜","🍕","🍩","☕","🎧","🎬","🎨","📷","🎮","⚽","🚀","💡"];
+const emDlg=$("#emDlg"); let emPick="";
+function renderMeBtn(){
+  const b=$("#meBtn"); if(!b) return;
+  const can=!!(S.me && S.db && !S.readOnly && !S.noDb);
+  b.hidden=!can; if(!can) return;
+  const m=S.members.get(S.me); b.textContent=(m&&m.emoji)||"🙂";
+}
+function emSet(v){
+  emPick=v; $("#emPrev").textContent=v;
+  for(const x of $("#emGrid").children) x.setAttribute("aria-pressed",String(x.textContent===v));
+}
+$("#meBtn").addEventListener("click",()=>{
+  const g=$("#emGrid"); g.replaceChildren(...EMOJIS.map(e=>h("button",{type:"button","aria-pressed":"false","aria-label":e,onclick:()=>{ $("#emInput").value=""; emSet(e); }},e)));
+  const m=S.members.get(S.me); $("#emInput").value=""; $("#emErr").textContent=""; emSet((m&&m.emoji)||"");
+  emDlg.showModal();
+});
+$("#emInput").addEventListener("input",e=>emSet(firstGlyph(e.target.value)));
+$("#emClose").addEventListener("click",()=>emDlg.close());
+$("#emCancel").addEventListener("click",()=>emDlg.close());
+$("#emForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!emPick){ $("#emErr").textContent="เลือกอิโมจิก่อน"; return; }
+  try{ await queueWrite("m"+S.me,()=>S.db.doc("members/"+S.me).set({emoji:emPick},{merge:true})); emDlg.close(); toast("บันทึกอิโมจิแล้ว"); }
+  catch(err){ $("#emErr").textContent=writeErr(err); }
+});
+
 const tgDlg=$("#tgDlg"); let tgYm=null;
 function openTargets(ym){
   tgYm=ym; const t=S.ktg[ym]||{}; const g=$("#tgGrid"); g.replaceChildren();
