@@ -191,6 +191,10 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
 .dlg-foot .sp{margin-left:auto}
 .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .dues{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.readys{display:flex;flex-wrap:wrap;gap:8px 20px}
+.readys label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px}
+.readys input{width:18px;height:18px;accent-color:var(--ok);margin:0}
+.pill.ready{background:color-mix(in srgb,var(--ok) 16%,var(--surface));color:var(--ok)}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field>span{font-size:12.5px;color:var(--muted);font-weight:500}
 .field input,.field select,.field textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 10px;min-width:0;width:100%}
@@ -320,6 +324,7 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
         <label class="field"><span id="clipDueLbl">วันอัปคลิป (กำหนดส่ง)</span><input type="date" id="fClipDue"></label>
         <label class="field" id="coverDueF"><span>วันส่งปกคลิป (กำหนดส่ง)</span><input type="date" id="fCoverDue"></label>
       </div>
+      <div class="field" id="readyF"><span>ความพร้อม</span><div class="readys"><label><input type="checkbox" id="fReadyClip"> พร้อมทำคลิป</label><label><input type="checkbox" id="fReadyCover"> พร้อมทำปก</label></div></div>
       <div class="field"><span>ขั้นตอน</span><div class="steps" id="fStage"></div></div>
       <div id="fAction"></div>
       <label class="field"><span>โฟลเดอร์ Drive (Note, บท, ไฟล์เสียง)</span><div class="link-row"><input id="fDrive" type="url" placeholder="https://drive.google.com/..." autocomplete="off"><a id="fDriveGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
@@ -609,6 +614,11 @@ function memberIds(){
 
 /* ---------- chip/card builders ---------- */
 function dragProps(id){ return {"data-drag":id}; }
+function readyMark(it){
+  const p=readyPills(it); if(!p) return null;
+  const t=[...p.children].map(x=>x.textContent.includes("คลิป")?"คลิป":"ปก").join("+");
+  return h("span",{style:"color:var(--ok)",title:"พร้อมทำ"+t},"✓"+t);
+}
 function chip(it){
   const f=FORMATS[it.format]||FORMATS.diary, st=status(it);
   const em=emojiOf(it.owner);
@@ -617,8 +627,16 @@ function chip(it){
     em? h("span",{class:"em","aria-hidden":"true",text:em}):null,
     h("span",{class:"tx"},
       h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
-      h("span",{class:"s"},h("span",null,stageLabel(it)), h("span",{style:"color:var(--muted);font-weight:500"},nameOf(it.owner)))));
+      h("span",{class:"s"},h("span",null,stageLabel(it)), readyMark(it), h("span",{style:"color:var(--muted);font-weight:500"},nameOf(it.owner)))));
   return c;
+}
+/* ready ticks: shown until that piece is done (clip sent for review / cover link attached) */
+function readyPills(it){
+  if(it.posted || flowOf(it)!=="video") return null;
+  const clip=it.readyClip && (stageIdx(it)<stageIdx(it,"clip") || (it.stage==="clip" && it.clipState!=="review"));
+  const cover=it.readyCover && !it.coverUrl;
+  if(!clip && !cover) return null;
+  return h("span",{class:"meta"}, clip? h("span",{class:"pill ready"},"✓ พร้อมทำคลิป"):null, cover? h("span",{class:"pill ready"},"✓ พร้อมทำปก"):null);
 }
 function card(it){
   const f=FORMATS[it.format]||FORMATS.diary, st=status(it);
@@ -626,6 +644,7 @@ function card(it){
     h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
     h("span",{class:"meta"},h("span",{class:"tag",style:"--c:"+f.c},f.label), h("span",null,"โพสต์ "+thShort(it.postDate)), h("span",null,nameOf(it.owner))),
     st.next? h("span",{class:"meta"},"ส่ง"+st.next.kind+" "+thShort(st.next.date)):null,
+    readyPills(it),
     (st.pill||st.late||st.soon||st.dueLate)? h("span",{class:"meta"},
       st.pill? h("span",{class:"pill "+st.cls},st.pill):null,
       st.dueLate? h("span",{class:"pill late"},st.dueLate):null,
@@ -1107,7 +1126,7 @@ const dlg=$("#dlg");
 let draft=null, delArmed=null;
 
 function openNew(date){
-  draft={id:null, title:"", format:"diary", owner:S.me||"", postDate:date||todayStr(), voiceDue:"", clipDue:"", coverDue:"", coverUrl:"", stage:"idea",
+  draft={id:null, title:"", format:"diary", owner:S.me||"", postDate:date||todayStr(), voiceDue:"", clipDue:"", coverDue:"", coverUrl:"", readyClip:false, readyCover:false, stage:"idea",
     driveUrl:"", workUrl:"", postUrl:"", note:"", clipState:null, posted:false, log:[]};
   fillDialog({});
 }
@@ -1121,7 +1140,7 @@ function fillDialog(opts){
   $("#fTitle").value=draft.title||"";
   renderFormatSeg(); renderOwnerSel();
   $("#fDate").value=draft.postDate||"";
-  $("#fVoiceDue").value=draft.voiceDue||""; $("#fClipDue").value=draft.clipDue||""; $("#fCoverDue").value=draft.coverDue||""; $("#fCoverUrl").value=draft.coverUrl||""; syncDue();
+  $("#fVoiceDue").value=draft.voiceDue||""; $("#fClipDue").value=draft.clipDue||""; $("#fCoverDue").value=draft.coverDue||""; $("#fCoverUrl").value=draft.coverUrl||""; $("#fReadyClip").checked=!!draft.readyClip; $("#fReadyCover").checked=!!draft.readyCover; syncDue();
   renderStageSteps();
   $("#fDrive").value=draft.driveUrl||""; $("#fWork").value=draft.workUrl||""; $("#fPost").value=draft.postUrl||""; $("#fNote").value=draft.note||"";
   syncLinks(); renderAction(opts);
@@ -1177,7 +1196,7 @@ function renderStageSteps(){
 }
 function syncDue(){
   const vid=flowOf(draft)==="video";
-  $("#voiceDueF").hidden=!vid; $("#coverDueF").hidden=!vid; $("#coverUrlF").hidden=!vid;
+  $("#voiceDueF").hidden=!vid; $("#coverDueF").hidden=!vid; $("#coverUrlF").hidden=!vid; $("#readyF").hidden=!vid;
   $("#clipDueLbl").textContent = vid? "วันอัปคลิป (กำหนดส่ง)" : "วันส่งอินโฟ (กำหนดส่ง)";
 }
 function syncLinks(){
@@ -1224,6 +1243,7 @@ function collect(){
   const isVid=flowOf(d)==="video";
   d.voiceDue = isVid ? $("#fVoiceDue").value : ""; d.clipDue=$("#fClipDue").value;
   d.coverDue = isVid ? $("#fCoverDue").value : ""; d.coverUrl = isVid ? $("#fCoverUrl").value.trim() : "";
+  d.readyClip = isVid && $("#fReadyClip").checked; d.readyCover = isVid && $("#fReadyCover").checked;
   d.driveUrl=$("#fDrive").value.trim(); d.workUrl=$("#fWork").value.trim(); d.postUrl=$("#fPost").value.trim(); d.note=$("#fNote").value.trim();
   return d;
 }
@@ -1247,6 +1267,8 @@ function describeChanges(prev,d){
   if((prev.clipDue||"")!==(d.clipDue||"")) out.push(d.clipDue?"ตั้งวันส่ง"+(flowOf(d)==="video"?"คลิป":"อินโฟ")+" "+thShort(d.clipDue):"ลบวันส่ง"+(flowOf(d)==="video"?"คลิป":"อินโฟ"));
   if((prev.coverDue||"")!==(d.coverDue||"")) out.push(d.coverDue?"ตั้งวันส่งปก "+thShort(d.coverDue):"ลบวันส่งปก");
   if((prev.coverUrl||"")!==(d.coverUrl||"")) out.push(d.coverUrl?"แนบลิงก์ปกคลิป":"ลบลิงก์ปกคลิป");
+  if(!!prev.readyClip!==!!d.readyClip) out.push(d.readyClip?"ติ๊กพร้อมทำคลิป":"เอาติ๊กพร้อมทำคลิปออก");
+  if(!!prev.readyCover!==!!d.readyCover) out.push(d.readyCover?"ติ๊กพร้อมทำปก":"เอาติ๊กพร้อมทำปกออก");
   if(prev.owner!==d.owner) out.push("เปลี่ยนเจ้าของเป็น "+nameOf(d.owner));
   if(prev.format!==d.format) out.push("เปลี่ยนรูปแบบเป็น "+FORMATS[d.format].label);
   return out.join(", ")||"แก้รายละเอียด";
