@@ -166,6 +166,18 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .mine section h2{font-family:var(--font-display);font-size:18px;margin:0 0 4px}
 .mine section p.sub{margin:0 0 12px;color:var(--muted);font-size:13px}
 .mine .list{display:flex;flex-direction:column;gap:8px}
+.range-ctl{display:flex;flex-direction:column;gap:8px;margin:2px 0 8px}
+.range-seg button{padding:4px 12px;font-size:13px;background:var(--surface)}
+.range-seg button[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--surface));font-weight:600}
+.range-dates{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.range-dates input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 8px}
+.k-sort{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12.5px}
+.k-sort select{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:4px 8px}
+.k-sort .btn{padding:3px 10px;font-size:12.5px}
+.kbox.team .k-sort select{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);color:var(--brand-fg)}
+.kbox.team .k-sort select option{color:#0d2a6e;background:#fff}
+.tg-mode{margin-bottom:4px}
+.k-tbl{display:flex;flex-direction:column;gap:8px;min-width:0}
 .row{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:center;text-align:left;width:100%}
 .row .date{font-variant-numeric:tabular-nums;font-weight:600;font-size:13px;text-align:center;line-height:1.15;min-width:3.2em}
 .row .date small{display:block;font-weight:500;color:var(--muted);font-size:11px}
@@ -286,6 +298,7 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
 .tg-grid input{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:6px 8px;width:100%;min-width:0;font-variant-numeric:tabular-nums;text-align:right}
 .tg-wrap{overflow-x:auto}
 .tg-wrap .tg-grid{min-width:520px}
+.tg-grid.tg-rate{grid-template-columns:minmax(6em,1.2fr) repeat(7,minmax(5.5em,1fr));min-width:820px}
 
 @media (max-width:720px){
   .brand span{display:none}
@@ -384,8 +397,10 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
   <form class="dlg" id="tgForm" method="dialog">
     <div class="dlg-head"><h2 id="tgTitle" style="margin:0;font-family:var(--font-display);font-size:19px;flex:1">ตั้งเป้า</h2>
       <button class="icon-btn" type="button" id="tgClose" aria-label="ปิด"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3 3 13"/></svg></button></div>
-    <div class="dlg-body"><p class="k-sub" style="margin:0">เว้นว่าง = ไม่มีเป้า ช่องนั้นจะเทียบกับเดือนก่อนอย่างเดียว เป้าทีมตั้งแยก ไม่ได้รวมจากรายคน</p>
-      <div class="tg-wrap"><div class="tg-grid" id="tgGrid"></div></div><div class="err" id="tgErr" role="alert"></div></div>
+    <div class="dlg-body"><p class="k-sub" style="margin:0">เว้นว่าง = ไม่มีเป้า ช่องนั้นจะเทียบกับเดือนก่อนอย่างเดียว เป้าทีมตั้งแยก ไม่ได้รวมจากรายคน เป้าต่อผู้ชม 1,000 โชว์เมื่อสลับ KPI เป็นต่อผู้ชม 1,000</p>
+      <div class="seg range-seg tg-mode" id="tgMode"><button type="button" data-m="sum" aria-pressed="true">ยอดรวม</button><button type="button" data-m="rate" aria-pressed="false">ต่อผู้ชม 1,000</button></div>
+      <div class="tg-wrap" id="tgWrapSum"><div class="tg-grid" id="tgGrid"></div></div>
+      <div class="tg-wrap" id="tgWrapRate" hidden><div class="tg-grid tg-rate" id="tgGridR"></div></div><div class="err" id="tgErr" role="alert"></div></div>
     <div class="dlg-foot"><span class="sp"></span><button class="btn ghost" type="button" id="tgCancel">ยกเลิก</button><button class="btn primary" type="submit" id="tgSave">บันทึกเป้า</button></div>
   </form>
 </dialog>
@@ -885,14 +900,36 @@ function renderMine(main){
     if(st.turn==="editor") return S.me===S.editorId;
     return isMine(it); });
   const mine=items.filter(it=>isMine(it) && !it.posted && !waiting.includes(it));
-  const done=items.filter(it=>isMine(it) && it.posted).slice(-5).reverse();
-  const sec=(title,sub,list,emptyTxt)=>h("section",null,h("h2",null,title),h("p",{class:"sub"},sub),
+  const rg=postRange();
+  const done=items.filter(it=>isMine(it) && it.posted && (!rg.from || (it.postDate||"")>=rg.from) && (!rg.to || (it.postDate||"")<=rg.to)).reverse();
+  const sec=(title,sub,list,emptyTxt,ctl)=>h("section",null,h("h2",null,title),ctl||null,h("p",{class:"sub"},sub),
     h("div",{class:"list"}, list.length? list.map(row) : h("div",{class:"empty"},emptyTxt)));
   main.append(h("div",{class:"mine"},
     sec("รอฉันทำ", S.me===S.editorId?"งานที่เป็นของคุณ รวมคลิปที่พี่ๆ ส่งมาให้ทำ":"งานของคุณที่ถึงตาคุณ รวมคลิปที่รอคุณรีวิว", waiting, "ไม่มีงานค้างที่รอคุณ"),
     h("div",{style:"display:flex;flex-direction:column;gap:20px;min-width:0"},
       sec("งานของฉันที่อยู่ระหว่างทาง","ชิ้นที่รอคนอื่นอยู่ เช่น รอ"+editorName()+"ทำคลิป",mine,"ไม่มีงานที่รอคนอื่น"),
-      sec("โพสต์ล่าสุด","5 ชิ้นล่าสุดของคุณ",done,"ยังไม่มีงานที่โพสต์"))));
+      sec("โพสต์", done.length+" ชิ้น "+rg.label+" เรียงล่าสุดก่อน", done, "ไม่มีงานที่โพสต์ในช่วงนี้", postRangeCtl()))));
+}
+/* ช่วงของรายการโพสต์ในงานของฉัน: สัปดาห์นี้ (เริ่มวันจันทร์) เดือนนี้ เลือกช่วง ทั้งหมด */
+S.mineRange = Object.assign({mode:"month",from:"",to:""}, store.get("mineRange",{}));
+function postRange(){
+  const r=S.mineRange, t=new Date(), td=ymd(t);
+  if(r.mode==="week"){ const d=new Date(t); d.setDate(t.getDate()-((t.getDay()+6)%7)); return {from:ymd(d),to:td,label:"สัปดาห์นี้ ("+thShort(ymd(d))+" ถึงวันนี้)"}; }
+  if(r.mode==="month") return {from:ymd(new Date(t.getFullYear(),t.getMonth(),1)),to:td,label:"เดือน"+TH_MONTH[t.getMonth()]};
+  if(r.mode==="range"){ const from=r.from||"", to=r.to||""; return {from,to,label: from||to ? (from?thShort(from):"เริ่มแรก")+" ถึง "+(to?thShort(to):"ล่าสุด") : "ทุกช่วง (ยังไม่เลือกวัน)"}; }
+  return {from:"",to:"",label:"ทั้งหมด"};
+}
+function setRange(p){ S.mineRange=Object.assign({},S.mineRange,p); store.set("mineRange",S.mineRange); render(); }
+function postRangeCtl(){
+  const r=S.mineRange;
+  const seg=h("div",{class:"seg range-seg"},...[["week","สัปดาห์"],["month","เดือน"],["range","เลือกช่วง"],["all","ทั้งหมด"]].map(([k,l])=>
+    h("button",{type:"button","aria-pressed":String(r.mode===k),onclick:()=>setRange({mode:k})},l)));
+  if(r.mode!=="range") return h("div",{class:"range-ctl"},seg);
+  return h("div",{class:"range-ctl"},seg,
+    h("div",{class:"range-dates"},
+      h("input",{type:"date",value:r.from||"","aria-label":"ตั้งแต่วันที่",onchange:e=>setRange({from:e.target.value})}),
+      h("span",null,"ถึง"),
+      h("input",{type:"date",value:r.to||"","aria-label":"ถึงวันที่",onchange:e=>setRange({to:e.target.value})})));
 }
 
 function render(){
@@ -916,6 +953,7 @@ function render(){
 const KM = [
   {k:"posts",    l:"โพสต์",        tgt:true},
   {k:"viewers",  l:"ผู้ชม",        tgt:true},
+  {k:"viewersAvg",l:"ผู้ชมต่อโพสต์ (ค่าเฉลี่ย)", rateOnly:true},
   {k:"reactions",l:"รีแอค"},
   {k:"comments", l:"คอมเมนต์"},
   {k:"shares",   l:"แชร์"},
@@ -953,37 +991,46 @@ function kVal(a, k){
   }
   if(k==="posts") return a.posts;
   if(k==="viewers") return median(a.viewerList);
+  if(k==="viewersAvg") return a.withData ? a.viewers/a.withData : null;
   const v=a[k], base=k==="follows"?a.folViewers:a.viewers; if(v==null || !base) return null;
   return v/base*1000;
 }
 function kFmt(a,k,v){
   if(v==null) return "–";
   if(k==="revenue") return "฿"+fmtN(v, S.kRate?2:0);
-  if(S.kRate && !["posts","viewers"].includes(k)) return fmtN(v,1);
+  if(S.kRate && !["posts","viewers","viewersAvg"].includes(k)) return fmtN(v,1);
   return fmtN(v);
 }
 function kLabel(k){
   const m=KM.find(x=>x.k===k).l;
   if(!S.kRate) return m;
   if(k==="viewers") return "ผู้ชมต่อโพสต์ (มัธยฐาน)";
-  if(k==="posts") return m;
+  if(k==="posts"||k==="viewersAvg") return m;
   return m+" ต่อผู้ชม 1,000";
+}
+/* เป้า: โหมดยอดรวมใช้ช่องเดิม (posts viewers follows revenue) โหมดต่อผู้ชม 1,000 ใช้ช่อง r_<ตัววัด> แยกกัน */
+const RATE_TGT = ["viewers","viewersAvg","reactions","comments","shares","follows","revenue"];
+function kTgt(tg, k){
+  if(k==="posts") return tg.posts;
+  if(S.kRate) return RATE_TGT.includes(k) ? tg["r_"+k] : null;
+  return (KM.find(x=>x.k===k)||{}).tgt ? tg[k] : null;
 }
 function kBox(title, ownerId, ym, prevYm, isTeam){
   const a=kAgg(ym,ownerId), p=kAgg(prevYm,ownerId);
   const tdoc=S.ktg[ym]||{}; const tg=isTeam? (tdoc.team||{}) : ((tdoc.people||{})[ownerId]||{});
   const rows=h("div",{class:"k-rows"});
   for(const m of KM){
+    if(m.rateOnly && !S.kRate) continue;
     const v=kVal(a,m.k), pv=p.posts? kVal(p,m.k) : null;
     let delta;
     if(pv==null || v==null || a.posts===0) delta=h("span",{class:"k-delta none"},"");
     else if(pv===0) delta=h("span",{class:"k-delta none"},"เดือนก่อน 0");
     else { const d=(v-pv)/pv*100; delta=h("span",{class:"k-delta "+(d>=0?"up":"down")},(d>=0?"▲":"▼")+fmtN(Math.abs(d))+"% จาก"+TH_MON_S[+prevYm.slice(5)-1]); }
     let extra=null, bar=null;
-    const t=m.tgt && !S.kRate ? tg[m.k] : null;
+    const t=kTgt(tg,m.k);
     if(t){
       const pct=v==null?0:v/t*100;
-      extra=h("small",null,"เป้า "+(m.k==="revenue"?"฿":"")+fmtN(t)+" ("+fmtN(pct)+"%)");
+      extra=h("small",null,"เป้า "+kFmt(a,m.k,t)+" ("+fmtN(pct)+"%)");
       bar=h("div",{class:"k-bar"+(pct>=100?" done":"")},h("i",{style:"width:"+Math.min(100,pct)+"%"}));
     }
     let valEl=h("span",{class:"val"},kFmt(a,m.k,v));
@@ -1005,10 +1052,31 @@ function kBox(title, ownerId, ym, prevYm, isTeam){
   }
   return box;
 }
+/* ตัวเลือก "เรียงจาก" ของตารางใน KPI: opts = [[ค่า, ป้าย, ฟังก์ชันดึงค่า, ชนิด num|date|text]] จำค่าไว้ในเครื่อง */
+S.kSort = store.get("kSort",{});
+function kSorter(key, opts, def){
+  const saved=S.kSort[key]||{};
+  const by=opts.some(o=>o[0]===saved.by)? saved.by : def;
+  const o=opts.find(x=>x[0]===by), kind=o[3]||"num";
+  const desc = saved.by===by && typeof saved.desc==="boolean" ? saved.desc : kind!=="text";
+  const set=p=>{ S.kSort[key]=Object.assign({by,desc},p); store.set("kSort",S.kSort); render(); };
+  const cmp=(x,y)=>{ const a=o[2](x), b=o[2](y);
+    if(a==null&&b==null) return 0; if(a==null) return 1; if(b==null) return -1;
+    const r = kind==="num" ? a-b : String(a).localeCompare(String(b),"th"); return desc? -r : r; };
+  const dirTxt = kind==="date" ? (desc?"ล่าสุดก่อน":"เก่าสุดก่อน") : kind==="text" ? (desc?"ฮ ไป ก":"ก ไป ฮ") : (desc?"มากไปน้อย":"น้อยไปมาก");
+  const sel=h("select",{"aria-label":"เรียงจาก",onchange:e=>{ const k=opts.find(x=>x[0]===e.target.value); set({by:e.target.value,desc:(k[3]||"num")!=="text"}); }},
+    ...opts.map(x=>h("option",{value:x[0]},x[1])));
+  sel.value=by;
+  const el=h("div",{class:"k-sort"},h("span",null,"เรียงจาก"),sel,h("button",{class:"btn",type:"button",title:"สลับลำดับ",onclick:()=>set({desc:!desc})},dirTxt));
+  return {el,cmp};
+}
 function kTable(a, isTeam, doc){
   const fx=doc&&doc.fx&&doc.fx.rate, today=todayStr();
   const tb=h("tbody");
-  const sorted=[...a.list].sort((x,y)=>((y.m&&y.m.viewers)||0)-((x.m&&x.m.viewers)||0));
+  const mv=k=>r=>r.m? (r.m[k]||0) : null;
+  const so=kSorter("posts",[["viewers","ผู้ชม",mv("viewers")],["reactions","รีแอค",mv("reactions")],["comments","คอมเมนต์",mv("comments")],
+    ["shares","แชร์",mv("shares")],["follows","ติดตาม",r=>r.f],["revenue","รายได้",mv("earnUsd")],["date","วันโพสต์",r=>r.it.postDate||null,"date"],["title","ชื่อโพสต์",r=>r.it.title||"","text"]],"viewers");
+  const sorted=[...a.list].sort(so.cmp);
   for(const r of sorted){
     const it=r.it, m=r.m, link=safeUrl((m&&m.permalink)||it.postUrl);
     const young=daysBetween(it.postDate,today)<7;
@@ -1019,9 +1087,13 @@ function kTable(a, isTeam, doc){
       h("td",null,m?fmtN(m.viewers):"–"), h("td",null,m?fmtN(m.reactions):"–"), h("td",null,m?fmtN(m.comments):"–"), h("td",null,m?fmtN(m.shares):"–"),
       h("td",null,r.f!=null?fmtN(r.f):"–"), h("td",null,m&&fx?"฿"+fmtN(m.earnUsd*fx):"–")));
   }
-  return h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
-    h("thead",null,h("tr",null,...["โพสต์","ผู้ชม","รีแอค","คอมเมนต์","แชร์","ติดตาม","รายได้"].map(x=>h("th",null,x)))), tb));
+  return h("div",{class:"k-tbl"},so.el,h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
+    h("thead",null,h("tr",null,...["โพสต์","ผู้ชม","รีแอค","คอมเมนต์","แชร์","ติดตาม","รายได้"].map(x=>h("th",null,x)))), tb)));
 }
+/* ตัวเลือกเรียงที่ใช้ร่วมกันของตารางแคมเปญและโพสต์ที่ยิง (แถว = [ชื่อ, ค่า]) */
+const adSortOpts = extra => [["spend","ใช้จ่าย",x=>x[1].spend],["reach","คนเห็น",x=>x[1].reach],["reactions","รีแอค",x=>x[1].reactions],
+  ["comments","คอมเมนต์",x=>x[1].comments],["shares","แชร์",x=>x[1].shares],["follows","ติดตาม",x=>x[1].follows],
+  ["cpf","฿/ผู้ติดตาม",x=>x[1].follows? x[1].spend/x[1].follows : null]].concat(extra);
 /* campaign box: all ad campaigns of the month (from kpi/<ym>.ads, Marketing API). Same shape as the team box,
    with spend in place of revenue and baht per follower added. Not filtered by format: ads are not cards. */
 const KA = [
@@ -1064,12 +1136,13 @@ function kAdsBox(ym, prevYm){
     box.append(h("div",null,h("button",{class:"btn",type:"button","aria-expanded":String(open),onclick:()=>{ open?S.kOpen.delete(key):S.kOpen.add(key); render(); }},open?"ซ่อนรายแคมเปญ":"ดูแคมเปญและโพสต์")));
     if(open){
       const tb=h("tbody");
-      cams.sort((a,b)=>b[1].spend-a[1].spend).forEach(([id,c])=>tb.append(h("tr",null,
+      const so=kSorter("cams",adSortOpts([["name","ชื่อแคมเปญ",x=>x[1].name||x[0],"text"]]),"spend");
+      cams.sort(so.cmp).forEach(([id,c])=>tb.append(h("tr",null,
         h("td",null,c.name||id,h("span",{class:"k-sub",style:"display:block"},(c.clips||[]).join(", "))),
         h("td",null,fmtN(c.reach)),h("td",null,fmtN(c.reactions)),h("td",null,fmtN(c.comments)),h("td",null,fmtN(c.shares)),
         h("td",null,fmtN(c.follows)),h("td",null,"฿"+fmtN(c.spend)),h("td",null,c.follows?"฿"+fmtN(c.spend/c.follows,2):"–"))));
-      box.append(h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
-        h("thead",null,h("tr",null,...["แคมเปญ","คนเห็น","รีแอค","คอมเมนต์","แชร์","ติดตาม","ใช้จ่าย","฿/ผู้ติดตาม"].map(x=>h("th",null,x)))),tb)));
+      box.append(h("div",{class:"k-tbl"},so.el,h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
+        h("thead",null,h("tr",null,...["แคมเปญ","คนเห็น","รีแอค","คอมเมนต์","แชร์","ติดตาม","ใช้จ่าย","฿/ผู้ติดตาม"].map(x=>h("th",null,x)))),tb))));
       const clips=Object.entries((doc.ads&&doc.ads.byClip)||{});
       if(clips.length) box.append(kAdsClipTable(clips, doc, Object.fromEntries(cams)));
     }
@@ -1081,7 +1154,8 @@ function kAdsClipTable(clips, doc, cams){
   const byPost={}; for(const [iid,m] of Object.entries(doc.posts||{})) if(m.postId) byPost[m.postId]={iid,m};
   const camTag=id=>{ const n=(cams[id]&&cams[id].name)||""; const x=n.match(/-([A-Z])\b/); return x?x[1]:n.slice(0,12); };
   const tb=h("tbody");
-  clips.sort((a,b)=>(b[1].active-a[1].active)||(b[1].spend-a[1].spend)).forEach(([name,c])=>{
+  const so=kSorter("adclips",adSortOpts([["since","วันเริ่มยิง",x=>x[1].since||null,"date"],["active","ยังยิงอยู่ก่อน",x=>x[1].active?1:0],["name","ชื่อโพสต์",x=>x[0],"text"]]),"spend");
+  clips.sort(so.cmp).forEach(([name,c])=>{
     const hit=c.storyId&&byPost[c.storyId], it=hit&&S.items.get(hit.iid);
     const link=safeUrl((hit&&hit.m.permalink)||(c.storyId?"https://www.facebook.com/"+c.storyId:""));
     const title=(it&&it.title)||name;
@@ -1092,8 +1166,8 @@ function kAdsClipTable(clips, doc, cams){
       h("td",null,fmtN(c.reach)),h("td",null,fmtN(c.reactions)),h("td",null,fmtN(c.comments)),h("td",null,fmtN(c.shares)),
       h("td",null,fmtN(c.follows)),h("td",null,"฿"+fmtN(c.spend)),h("td",null,c.follows?"฿"+fmtN(c.spend/c.follows,2):"–")));
   });
-  return h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
-    h("thead",null,h("tr",null,...["โพสต์ที่ยิง","คนเห็น","รีแอค","คอมเมนต์","แชร์","ติดตาม","ใช้จ่าย","฿/ผู้ติดตาม"].map(x=>h("th",null,x)))),tb));
+  return h("div",{class:"k-tbl"},so.el,h("div",{class:"k-tablewrap"},h("table",{class:"k-table"},
+    h("thead",null,h("tr",null,...["โพสต์ที่ยิง","คนเห็น","รีแอค","คอมเมนต์","แชร์","ติดตาม","ใช้จ่าย","฿/ผู้ติดตาม"].map(x=>h("th",null,x)))),tb)));
 }
 function kOwners(){
   const ids=new Set(); for(const it of S.items.values()) if(it.owner && it.owner!==TEAM) ids.add(it.owner);
@@ -1151,19 +1225,29 @@ function openTargets(ym){
   tgYm=ym; const t=S.ktg[ym]||{}; const g=$("#tgGrid"); g.replaceChildren();
   $("#tgTitle").textContent="ตั้งเป้า "+TH_MONTH[+ym.slice(5)-1]+" "+(+ym.slice(0,4)+543);
   $("#tgErr").textContent="";
+  const gr=$("#tgGridR"); gr.replaceChildren();
   g.append(h("b",null,""),h("b",null,"โพสต์ (ชิ้น)"),h("b",null,"ผู้ชม"),h("b",null,"ติดตาม"),h("b",null,"รายได้ (บาท)"));
-  const rowFor=(key,label,vals)=>{ g.append(h("span",{style:"font-weight:600"},label));
-    for(const k of ["posts","viewers","follows","revenue"]) g.append(h("input",{type:"number",min:"0",step:"any",inputmode:"numeric","data-who":key,"data-k":k,value:vals&&vals[k]!=null?vals[k]:"","aria-label":label+" "+k})); };
+  gr.append(h("b",null,""),...["ผู้ชมต่อโพสต์ มัธยฐาน","ผู้ชมต่อโพสต์ ค่าเฉลี่ย","รีแอค /1,000","คอมเมนต์ /1,000","แชร์ /1,000","ติดตาม /1,000","รายได้ ฿/1,000"].map(x=>h("b",null,x)));
+  const inp=(key,label,vals,k)=>h("input",{type:"number",min:"0",step:"any",inputmode:"decimal","data-who":key,"data-k":k,value:vals&&vals[k]!=null?vals[k]:"","aria-label":label+" "+k});
+  const rowFor=(key,label,vals)=>{
+    g.append(h("span",{style:"font-weight:600"},label),...["posts","viewers","follows","revenue"].map(k=>inp(key,label,vals,k)));
+    gr.append(h("span",{style:"font-weight:600"},label),...RATE_TGT.map(k=>inp(key,label,vals,"r_"+k))); };
   rowFor("team","ทั้งทีม",t.team);
   for(const id of kOwners()) rowFor(id,nameOf(id),(t.people||{})[id]);
+  tgSetMode(S.kRate?"rate":"sum");
   tgDlg.showModal();
 }
+function tgSetMode(m){
+  $("#tgWrapSum").hidden=m!=="sum"; $("#tgWrapRate").hidden=m!=="rate";
+  for(const b of $("#tgMode").children) b.setAttribute("aria-pressed",String(b.dataset.m===m));
+}
+$("#tgMode").addEventListener("click",e=>{ const b=e.target.closest("button[data-m]"); if(b) tgSetMode(b.dataset.m); });
 $("#tgForm").addEventListener("submit",async e=>{
   e.preventDefault();
   const out={team:{},people:{}};
   for(const inp of tgDlg.querySelectorAll("input[data-who]")){
     const v=inp.value.trim(); if(v==="") continue;
-    const n=Number(v); if(!isFinite(n)||n<0){ $("#tgErr").textContent="ใส่ตัวเลขที่ไม่ติดลบ"; inp.focus(); return; }
+    const n=Number(v); if(!isFinite(n)||n<0){ $("#tgErr").textContent="ใส่ตัวเลขที่ไม่ติดลบ"; tgSetMode(inp.closest("#tgGridR")?"rate":"sum"); inp.focus(); return; }
     if(inp.dataset.who==="team") out.team[inp.dataset.k]=n; else (out.people[inp.dataset.who] ||= {})[inp.dataset.k]=n;
   }
   out.updatedBy=S.me; out.updatedAt=new Date().toISOString();
