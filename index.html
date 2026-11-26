@@ -35,6 +35,7 @@
   --danger:#ff6b7d; --warn:#f0b54a; --ok:#4fbf8a; color-scheme:dark}
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{min-height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
@@ -191,10 +192,33 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
 .dlg-foot .sp{margin-left:auto}
 .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .dues{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
-.readys{display:flex;flex-wrap:wrap;gap:8px 20px}
-.readys label{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap}
-.field .readys input{width:18px;height:18px;padding:0;flex:none;accent-color:var(--ok);margin:0}
+.grid3{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr);gap:12px}
+.cover-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
+.cover-row .tick{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;white-space:nowrap}
+.field .cover-row .tick input{width:18px;height:18px;padding:0;flex:none;accent-color:var(--ok);margin:0}
+.cover-due{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.field .cover-due input{width:auto}
 .pill.ready{background:color-mix(in srgb,var(--ok) 16%,var(--surface));color:var(--ok)}
+.pill.series{background:color-mix(in srgb,var(--brand-soft) 35%,var(--surface));color:var(--fg)}
+.series-box{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.series-chips{display:flex;flex-wrap:wrap;gap:6px}
+.series-chips span{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:2px 4px 2px 10px;font-size:13px}
+.series-chips button{border:0;background:transparent;border-radius:999px;width:22px;height:22px;line-height:1;color:var(--muted)}
+.series-chips button:hover{background:var(--surface-2);color:var(--danger)}
+.series-box .link-row{display:flex;gap:6px}
+.series-box input{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;flex:1;min-width:0}
+.chat{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto;padding:10px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);min-height:56px}
+.chat .msg{max-width:85%;align-self:flex-start;display:flex;flex-direction:column;gap:2px}
+.chat .msg.me{align-self:flex-end;align-items:flex-end}
+.chat .msg .who{font-size:11.5px;color:var(--muted);font-weight:600}
+.chat .msg .bub{background:var(--surface);border:1px solid var(--line);border-radius:12px 12px 12px 4px;padding:6px 10px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.chat .msg.me .bub{background:color-mix(in srgb,var(--accent) 30%,var(--surface));border-color:transparent;border-radius:12px 12px 4px 12px}
+.chat .msg.old .bub{background:var(--surface-2);border-style:dashed}
+.chat .msg .bub a{color:inherit;text-decoration:underline}
+.chat .none{font-size:13px;color:var(--muted);text-align:center;margin:auto}
+.chat-in{display:flex;gap:6px;align-items:flex-end}
+.field .chat-in textarea{min-height:38px;max-height:140px;resize:none;flex:1}
+.chat-in .btn{height:38px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field>span{font-size:12.5px;color:var(--muted);font-weight:500}
 .field input,.field select,.field textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 10px;min-width:0;width:100%}
@@ -268,7 +292,7 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
   .mine{grid-template-columns:minmax(0,1fr)}
   .month-nav{margin-left:0;width:100%;justify-content:space-between}
   .month-nav h2{min-width:0}
-  .grid2{grid-template-columns:minmax(0,1fr)}
+  .grid2,.grid3{grid-template-columns:minmax(0,1fr)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -315,23 +339,35 @@ dialog::backdrop{background:rgba(8,15,35,.5)}
     </div>
     <div class="dlg-body">
       <div class="field"><span>รูปแบบ</span><div class="seg" id="fFormat"></div></div>
-      <div class="grid2">
+      <div class="grid3">
         <label class="field"><span>เจ้าของงาน</span><select id="fOwner"></select></label>
+        <div class="field"><span>ซีรีส์</span><div class="link-row"><select id="fSeries" aria-label="ซีรีส์"></select><button class="btn" type="button" id="seriesEdit" hidden title="เพิ่มหรือลบตัวเลือกซีรีส์">แก้</button></div></div>
         <label class="field"><span>วันโพสต์</span><input type="date" id="fDate" required></label>
+      </div>
+      <div class="series-box" id="seriesBox" hidden>
+        <div class="series-chips" id="seriesChips"></div>
+        <div class="link-row"><input id="seriesNew" placeholder="ชื่อซีรีส์ใหม่" maxlength="40" autocomplete="off" aria-label="ชื่อซีรีส์ใหม่"><button class="btn" type="button" id="seriesAdd">เพิ่ม</button></div>
+        <p class="k-sub" style="margin:0">ลบตัวเลือกแล้ว การ์ดเดิมที่ใช้ชื่อนั้นยังเก็บชื่อไว้ตามเดิม</p>
       </div>
       <div class="dues">
         <label class="field" id="voiceDueF"><span>วันอัปเสียง (กำหนดส่ง)</span><input type="date" id="fVoiceDue"></label>
         <label class="field"><span id="clipDueLbl">วันอัปคลิป (กำหนดส่ง)</span><input type="date" id="fClipDue"></label>
-        <label class="field" id="coverDueF"><span>วันส่งปกคลิป (กำหนดส่ง)</span><input type="date" id="fCoverDue"></label>
       </div>
-      <div class="field" id="readyF"><span>ความพร้อม</span><div class="readys"><label><input type="checkbox" id="fReadyClip"> พร้อมทำคลิป</label><label><input type="checkbox" id="fReadyCover"> พร้อมทำปก</label></div></div>
+      <div class="field" id="coverF"><span>ปก</span>
+        <div class="cover-row"><label class="tick"><input type="checkbox" id="fCoverReq"> ขอปก</label>
+          <label class="cover-due" id="coverDueF"><span>ส่งปกภายใน</span><input type="date" id="fCoverDue" aria-label="วันส่งปก"></label></div>
+        <input id="fCoverText" placeholder="พาดหัวปก" maxlength="120" autocomplete="off" aria-label="พาดหัวปก">
+      </div>
       <div class="field"><span>ขั้นตอน</span><div class="steps" id="fStage"></div></div>
       <div id="fAction"></div>
       <label class="field"><span>โฟลเดอร์ Drive (Note, บท, ไฟล์เสียง)</span><div class="link-row"><input id="fDrive" type="url" placeholder="https://drive.google.com/..." autocomplete="off"><a id="fDriveGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
-      <label class="field"><span id="fWorkLbl">ลิงก์คลิป</span><div class="link-row"><input id="fWork" type="url" placeholder="https://..." autocomplete="off"><a id="fWorkGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
+      <label class="field" id="fWorkF"><span id="fWorkLbl">ลิงก์คลิป</span><div class="link-row"><input id="fWork" type="url" placeholder="https://..." autocomplete="off"><a id="fWorkGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
       <label class="field" id="coverUrlF"><span>ลิงก์ปกคลิป</span><div class="link-row"><input id="fCoverUrl" type="url" placeholder="https://..." autocomplete="off"><a id="fCoverGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
-      <label class="field"><span>ลิงก์โพสต์จริง</span><div class="link-row"><input id="fPost" type="url" placeholder="ใส่หลังโพสต์แล้ว" autocomplete="off"><a id="fPostGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
-      <label class="field"><span>โน้ต</span><textarea id="fNote" placeholder="ประเด็น มุมเล่า ข้อควรระวัง"></textarea></label>
+      <label class="field"><span>ลิงก์โพสต์จริง (ใส่แล้วบันทึก = ปิดงาน)</span><div class="link-row"><input id="fPost" type="url" placeholder="ใส่หลังโพสต์แล้ว" autocomplete="off"><a id="fPostGo" target="_blank" rel="noopener" hidden>เปิด</a></div></label>
+      <div class="field" id="chatF"><span>แชท</span>
+        <div class="chat" id="chatList" aria-live="polite"></div>
+        <div class="chat-in"><textarea id="chatInput" rows="1" maxlength="2000" placeholder="พิมพ์ข้อความ กด Enter เพื่อส่ง" aria-label="พิมพ์ข้อความแชท"></textarea><button class="btn primary" type="button" id="chatSend">ส่ง</button></div>
+      </div>
       <div class="field" id="logWrap" hidden><span>ความเคลื่อนไหว</span><ul class="log" id="fLog"></ul></div>
       <div class="err" id="fErr" role="alert"></div>
     </div>
@@ -377,10 +413,14 @@ firebase.initializeApp(window.FIREBASE_CONFIG);
 
 /* ---------- constants ---------- */
 const FORMATS = {
-  diary:  {label:"ISAN Diary",  sub:"คลิปแผนที่",       flow:"video", c:"var(--diary)"},
-  motion: {label:"ISAN Motion", sub:"Motion Graphic",   flow:"video", c:"var(--motion)"},
-  info:   {label:"Infographic", sub:"งานภาพ",            flow:"info",  c:"var(--info)"}
+  diary:  {label:"คลิปแผนที่",   flow:"video", c:"var(--diary)"},
+  motion: {label:"คลิปโมชัน",    flow:"video", c:"var(--motion)"},
+  info:   {label:"อินโฟกราฟฟิค", flow:"info",  c:"var(--info)"}
 };
+/* เจ้าของ "ทีม": งานรวมของทุกคน ใน KPI นับให้ทุกคน */
+const TEAM = "team";
+/* ตัวเลือกซีรีส์ตั้งต้น ใช้จนกว่าจะมีรายการใน meta/config.series */
+const DEFAULT_SERIES = ["Diary","Showcase","Insight","City Profile"];
 const FLOWS = {
   video:[["idea","ไอเดีย"],["script","บท"],["voice","เสียง"],["clip","คลิป"],["post","โพสต์"]],
   info: [["idea","ไอเดีย"],["content","เนื้อหา"],["design","อินโฟ"],["post","โพสต์"]]
@@ -398,7 +438,7 @@ const TH_DOW = ["จ.","อ.","พ.","พฤ.","ศ.","ส.","อา."];
 
 /* ---------- state ---------- */
 const S = {
-  view:"calendar", month:null, items:new Map(), members:new Map(), profiles:{}, editorId:null,
+  view:"calendar", month:null, items:new Map(), members:new Map(), profiles:{}, editorId:null, series:null,
   me:null, isOwner:false, db:null, user:null, readOnly:false, loaded:false, slow:false, noDb:false,
   fmtOn:{diary:true,motion:true,info:true}, ownerFilter:"", hidePosted:true, editing:null,
   kpi:{}, kfol:{}, ktg:{}, kRate:false, kOpen:new Set()
@@ -442,13 +482,16 @@ function safeUrl(u){ try{ const x=new URL(u); return (x.protocol==="https:"||x.p
 
 function nameOf(id){
   if(!id) return "ยังไม่มีเจ้าของ";
+  if(id===TEAM) return "ทีม";
   const m=S.members.get(id); if(m && m.nick) return m.nick;
   const p=S.profiles[id]; return (p && p.name) || "สมาชิก";
 }
 /* อิโมจิเจ้าของงาน: ที่ตั้งไว้ใน members ถ้ายังไม่ตั้งใช้ตัวแรกของชื่อเรียก */
 const firstGlyph = t => { t=String(t||"").trim(); if(!t) return "";
   try{ return [...new Intl.Segmenter("th",{granularity:"grapheme"}).segment(t)][0].segment; }catch(e){ return [...t][0]; } };
-function emojiOf(id){ if(!id) return ""; const m=S.members.get(id); return (m&&m.emoji) || firstGlyph(nameOf(id)).toUpperCase(); }
+const seriesList = () => Array.isArray(S.series) ? S.series : DEFAULT_SERIES;
+const isMine = it => it.owner===S.me || it.owner===TEAM;
+function emojiOf(id){ if(!id) return ""; if(id===TEAM) return "👥"; const m=S.members.get(id); return (m&&m.emoji) || firstGlyph(nameOf(id)).toUpperCase(); }
 const editorName = () => S.editorId ? nameOf(S.editorId) : "ลีโอ";
 
 let toastT;
@@ -516,12 +559,21 @@ function withLog(it, text){ const log=(it.log||[]).slice(-29); log.push(logEntry
 async function saveItem(id, data){
   if(!S.db) throw {code:"not_granted"};
   data.updatedBy=S.me; data.updatedAt=new Date().toISOString();
+  /* แชทเขียนแยกทีละข้อความ (sendChat) ห้ามบันทึกจากสำเนาที่เปิดค้าง จึงตัดออก และ merge เพื่อไม่ลบช่องที่ไม่ได้ส่ง */
+  delete data.chat;
   const ref=S.db.doc("items/"+id);
-  return queueWrite(id, ()=>ref.set(data));
+  return queueWrite(id, ()=>ref.set(data,{merge:true}));
+}
+/* โพสต์แล้ว = มีลิงก์โพสต์จริง (ช่อง posted ยังเก็บไว้ให้ระบบดึงยอด KPI และ cal.py อ่าน) */
+function applyPosted(d){
+  if(safeUrl(d.postUrl)){ d.posted=true; d.stage="post"; if(flowOf(d)==="video") d.clipState="approved"; }
+  else d.posted=false;
+  return d;
 }
 async function patchItem(id, patch, logText){
   const cur=S.items.get(id); if(!cur) return;
   const next=Object.assign({}, cur, patch);
+  next.posted = next.stage==="post" && !!safeUrl(next.postUrl);
   if(logText) next.log=withLog(cur, logText);
   delete next.id;
   try{ await saveItem(id, next); }catch(e){ toast(writeErr(e)); throw e; }
@@ -609,15 +661,15 @@ function renderStrip(){
 function memberIds(){
   const ids=new Set(S.members.keys());
   for(const it of S.items.values()) if(it.owner) ids.add(it.owner);
-  return [...ids].sort((a,b)=>nameOf(a).localeCompare(nameOf(b),"th"));
+  ids.delete(TEAM);
+  return [...[...ids].sort((a,b)=>nameOf(a).localeCompare(nameOf(b),"th")), TEAM];
 }
 
 /* ---------- chip/card builders ---------- */
 function dragProps(id){ return {"data-drag":id}; }
 function readyMark(it){
-  const p=readyPills(it); if(!p) return null;
-  const t=[...p.children].map(x=>x.textContent.includes("คลิป")?"คลิป":"ปก").join("+");
-  return h("span",{style:"color:var(--ok)",title:"พร้อมทำ"+t},"✓"+t);
+  if(!coverAsked(it)) return null;
+  return h("span",{style:"color:var(--ok)",title:"ขอปก"},"✓ปก");
 }
 function chip(it){
   const f=FORMATS[it.format]||FORMATS.diary, st=status(it);
@@ -630,19 +682,18 @@ function chip(it){
       h("span",{class:"s"},h("span",null,stageLabel(it)), readyMark(it), h("span",{style:"color:var(--muted);font-weight:500"},nameOf(it.owner)))));
   return c;
 }
-/* ready ticks: shown until that piece is done (clip sent for review / cover link attached) */
+/* ขอปก: ขึ้นจนกว่าจะแนบลิงก์ปกจริง */
+const coverAsked = it => !it.posted && flowOf(it)==="video" && (it.readyCover || it.coverDue) && !it.coverUrl;
 function readyPills(it){
-  if(it.posted || flowOf(it)!=="video") return null;
-  const clip=it.readyClip && (stageIdx(it)<stageIdx(it,"clip") || (it.stage==="clip" && it.clipState!=="review"));
-  const cover=it.readyCover && !it.coverUrl;
-  if(!clip && !cover) return null;
-  return h("span",{class:"meta"}, clip? h("span",{class:"pill ready"},"✓ พร้อมทำคลิป"):null, cover? h("span",{class:"pill ready"},"✓ พร้อมทำปก"):null);
+  if(!coverAsked(it)) return null;
+  return h("span",{class:"meta"}, h("span",{class:"pill ready"},"✓ ขอปก"));
 }
+const chatN = it => Array.isArray(it.chat) ? it.chat.length : 0;
 function card(it){
   const f=FORMATS[it.format]||FORMATS.diary, st=status(it);
   return h("button",Object.assign({type:"button",class:"card",style:"--c:"+f.c,onclick:()=>openItem(it.id)},dragProps(it.id)),
     h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
-    h("span",{class:"meta"},h("span",{class:"tag",style:"--c:"+f.c},f.label), h("span",null,"โพสต์ "+thShort(it.postDate)), h("span",null,nameOf(it.owner))),
+    h("span",{class:"meta"},h("span",{class:"tag",style:"--c:"+f.c},f.label), it.series? h("span",{class:"pill series"},it.series):null, h("span",null,"โพสต์ "+thShort(it.postDate)), h("span",null,nameOf(it.owner)), chatN(it)? h("span",{title:"ข้อความในแชท"},"💬 "+chatN(it)):null),
     st.next? h("span",{class:"meta"},"ส่ง"+st.next.kind+" "+thShort(st.next.date)):null,
     readyPills(it),
     (st.pill||st.late||st.soon||st.dueLate)? h("span",{class:"meta"},
@@ -738,9 +789,9 @@ function welcome(){
   return h("div",{class:"welcome"},
     h("h2",null,"ยังไม่มีงานในปฏิทิน"),
     h("p",null,"กด \"+ งานใหม่\" หรือคลิกช่องวันที่ในปฏิทินเพื่อลงงานชิ้นแรก แต่ละชิ้นเดินตามขั้นของรูปแบบงาน"),
-    h("div",{class:"flow"},h("span",{class:"tag",style:"--c:var(--diary)"},"ISAN Diary"),h("span",{class:"tag",style:"--c:var(--motion)"},"ISAN Motion"),h("i",null,":"),
+    h("div",{class:"flow"},h("span",{class:"tag",style:"--c:var(--diary)"},FORMATS.diary.label),h("span",{class:"tag",style:"--c:var(--motion)"},FORMATS.motion.label),h("i",null,":"),
       h("b",null,"ไอเดีย"),h("i",null,"›"),h("b",null,"บท"),h("i",null,"›"),h("b",null,"เสียง"),h("i",null,"›"),h("b",null,"คลิป (ส่งให้ลีโอ)"),h("i",null,"›"),h("b",null,"โพสต์")),
-    h("div",{class:"flow"},h("span",{class:"tag",style:"--c:var(--info)"},"Infographic"),h("i",null,":"),
+    h("div",{class:"flow"},h("span",{class:"tag",style:"--c:var(--info)"},FORMATS.info.label),h("i",null,":"),
       h("b",null,"ไอเดีย"),h("i",null,"›"),h("b",null,"เนื้อหา"),h("i",null,"›"),h("b",null,"อินโฟ"),h("i",null,"›"),h("b",null,"โพสต์")));
 }
 
@@ -802,7 +853,7 @@ function renderBoard(main){
     dropZone(el, id=>{
       const it=S.items.get(id); if(!it) return;
       const to=col.map[flowOf(it)];
-      if(!to){ toast("Infographic ไม่มีขั้นเสียง"); return; }
+      if(!to){ toast(FORMATS.info.label+"ไม่มีขั้นเสียง"); return; }
       moveStage(id,to);
     });
     board.append(el);
@@ -816,7 +867,8 @@ function row(it){
     h("span",{class:"date"}, d? [String(d.getDate()), h("small",null,TH_MON_S[d.getMonth()])] : "-"),
     h("span",{style:"min-width:0;display:flex;flex-direction:column;gap:3px"},
       h("span",{class:"t",text:it.title||"ไม่มีชื่อ"}),
-      h("span",{class:"meta"},h("span",{class:"tag",style:"--c:"+f.c},f.label),h("span",null,"ขั้น"+stageLabel(it)),
+      h("span",{class:"meta"},h("span",{class:"tag",style:"--c:"+f.c},f.label),it.series? h("span",{class:"pill series"},it.series):null,h("span",null,"ขั้น"+stageLabel(it)),
+        chatN(it)? h("span",{title:"ข้อความในแชท"},"💬 "+chatN(it)):null,
         st.next? h("span",null,"ส่ง"+st.next.kind+" "+thShort(st.next.date)) : null,
         flowOf(it)==="video" && it.stage==="clip" ? null : h("span",null,nameOf(it.owner)))),
     h("span",{class:"meta",style:"justify-content:flex-end"},
@@ -831,9 +883,9 @@ function renderMine(main){
   const waiting=items.filter(it=>{ const st=status(it);
     if(it.posted) return false;
     if(st.turn==="editor") return S.me===S.editorId;
-    return it.owner===S.me; });
-  const mine=items.filter(it=>it.owner===S.me && !it.posted && !waiting.includes(it));
-  const done=items.filter(it=>it.owner===S.me && it.posted).slice(-5).reverse();
+    return isMine(it); });
+  const mine=items.filter(it=>isMine(it) && !it.posted && !waiting.includes(it));
+  const done=items.filter(it=>isMine(it) && it.posted).slice(-5).reverse();
   const sec=(title,sub,list,emptyTxt)=>h("section",null,h("h2",null,title),h("p",{class:"sub"},sub),
     h("div",{class:"list"}, list.length? list.map(row) : h("div",{class:"empty"},emptyTxt)));
   main.append(h("div",{class:"mine"},
@@ -853,6 +905,8 @@ function render(){
   else if(S.view==="mine") renderMine(main);
   else if(S.view==="kpi") renderKpi(main);
   else renderCalendar(main);
+  /* แชทของการ์ดที่เปิดอยู่ อัปเดตทันทีเมื่อมีข้อความใหม่ */
+  if(dlg.open && draft && draft.id) renderChat(false);
 }
 
 /* ---------- KPI ----------
@@ -874,7 +928,7 @@ const median = a => { if(!a.length) return null; const s=[...a].sort((x,y)=>x-y)
 
 function kAgg(ym, ownerId){
   const doc=S.kpi[ym]||null, fol=S.kfol[ym]||{}, fx=doc&&doc.fx&&doc.fx.rate;
-  const items=[...S.items.values()].filter(it=>it.posted && safeUrl(it.postUrl) && (it.postDate||"").slice(0,7)===ym && S.fmtOn[it.format] && (!ownerId || it.owner===ownerId))
+  const items=[...S.items.values()].filter(it=>it.posted && safeUrl(it.postUrl) && (it.postDate||"").slice(0,7)===ym && S.fmtOn[it.format] && (!ownerId || it.owner===ownerId || it.owner===TEAM))
     .sort((a,b)=>(a.postDate||"").localeCompare(b.postDate||""));
   const a={posts:items.length, viewers:0, reactions:0, comments:0, shares:0, follows:0, usd:0, withData:0, folKnown:0, folViewers:0, list:[], viewerList:[]};
   for(const it of items){
@@ -1042,7 +1096,7 @@ function kAdsClipTable(clips, doc, cams){
     h("thead",null,h("tr",null,...["โพสต์ที่ยิง","คนเห็น","รีแอค","คอมเมนต์","แชร์","ติดตาม","ใช้จ่าย","฿/ผู้ติดตาม"].map(x=>h("th",null,x)))),tb));
 }
 function kOwners(){
-  const ids=new Set(); for(const it of S.items.values()) if(it.owner) ids.add(it.owner);
+  const ids=new Set(); for(const it of S.items.values()) if(it.owner && it.owner!==TEAM) ids.add(it.owner);
   return [...ids].sort((a,b)=>nameOf(a).localeCompare(nameOf(b),"th"));
 }
 function renderKpi(main){
@@ -1126,8 +1180,8 @@ const dlg=$("#dlg");
 let draft=null, delArmed=null;
 
 function openNew(date){
-  draft={id:null, title:"", format:"diary", owner:S.me||"", postDate:date||todayStr(), voiceDue:"", clipDue:"", coverDue:"", coverUrl:"", readyClip:false, readyCover:false, stage:"idea",
-    driveUrl:"", workUrl:"", postUrl:"", note:"", clipState:null, posted:false, log:[]};
+  draft={id:null, title:"", format:"diary", owner:S.me||"", series:"", postDate:date||todayStr(), voiceDue:"", clipDue:"", coverDue:"", coverUrl:"", coverText:"", readyCover:false, stage:"idea",
+    driveUrl:"", workUrl:"", postUrl:"", clipState:null, posted:false, log:[]};
   fillDialog({});
 }
 function openItem(id, opts){
@@ -1138,12 +1192,14 @@ function openItem(id, opts){
 function fillDialog(opts){
   $("#fErr").textContent="";
   $("#fTitle").value=draft.title||"";
-  renderFormatSeg(); renderOwnerSel();
+  renderFormatSeg(); renderOwnerSel(); renderSeriesSel(); $("#seriesBox").hidden=true;
   $("#fDate").value=draft.postDate||"";
-  $("#fVoiceDue").value=draft.voiceDue||""; $("#fClipDue").value=draft.clipDue||""; $("#fCoverDue").value=draft.coverDue||""; $("#fCoverUrl").value=draft.coverUrl||""; $("#fReadyClip").checked=!!draft.readyClip; $("#fReadyCover").checked=!!draft.readyCover; syncDue();
+  $("#fVoiceDue").value=draft.voiceDue||""; $("#fClipDue").value=draft.clipDue||""; $("#fCoverDue").value=draft.coverDue||""; $("#fCoverUrl").value=draft.coverUrl||"";
+  $("#fCoverReq").checked=!!(draft.readyCover||draft.coverDue); $("#fCoverText").value=draft.coverText||""; syncDue();
   renderStageSteps();
-  $("#fDrive").value=draft.driveUrl||""; $("#fWork").value=draft.workUrl||""; $("#fPost").value=draft.postUrl||""; $("#fNote").value=draft.note||"";
+  $("#fDrive").value=draft.driveUrl||""; $("#fWork").value=draft.workUrl||""; $("#fPost").value=draft.postUrl||"";
   syncLinks(); renderAction(opts);
+  $("#chatInput").value=""; renderChat(true);
   const log=$("#fLog"); log.replaceChildren();
   (draft.log||[]).slice().reverse().forEach(l=>{
     const d=new Date(l.at);
@@ -1155,6 +1211,8 @@ function fillDialog(opts){
   const ro=S.readOnly||!S.db;
   dlg.querySelectorAll("input,select,textarea").forEach(e=>e.disabled=ro);
   $("#saveBtn").hidden=ro;
+  $("#seriesEdit").hidden=ro || !S.isOwner;
+  syncChatInput();
   if(!dlg.open) dlg.showModal();
   if(opts.handoff){ const f=$("#fDrive"); f.focus(); $("#fErr").textContent="ใส่ลิงก์โฟลเดอร์ Drive ก่อนส่งงานให้"+editorName()+"ทำคลิป"; }
   else if(!draft.id) $("#fTitle").focus();
@@ -1169,17 +1227,87 @@ function renderFormatSeg(){
       draft.stage = draft.stage==="post" ? "post" : st[Math.max(0,ni)][0];
       if(flowOf(draft)!=="video") draft.clipState=null;
       renderFormatSeg(); renderStageSteps(); renderAction({}); syncLinks(); syncDue();
-    }},h("span",{class:"dot"}),f.label,h("span",{style:"color:var(--muted);font-weight:400"}," "+f.sub)));
+    }},h("span",{class:"dot"}),f.label));
   }
 }
 function renderOwnerSel(){
   const sel=$("#fOwner"); sel.replaceChildren();
   const ids=memberIds(); if(S.me && !ids.includes(S.me)) ids.unshift(S.me);
   if(draft.owner && !ids.includes(draft.owner)) ids.push(draft.owner);
-  if(!ids.length) sel.append(h("option",{value:""},"ยังไม่มีสมาชิก"));
-  for(const id of ids) sel.append(h("option",{value:id},nameOf(id)+(id===S.me?" (ฉัน)":"")));
+  for(const id of ids) sel.append(h("option",{value:id},nameOf(id)+(id===S.me?" (ฉัน)":id===TEAM?" (KPI นับให้ทุกคน)":"")));
   sel.value=draft.owner||"";
 }
+
+/* ---------- ซีรีส์ ---------- */
+function renderSeriesSel(){
+  const sel=$("#fSeries"), cur=sel.options.length&&dlg.open ? sel.value : (draft.series||"");
+  sel.replaceChildren(h("option",{value:""},"ไม่ระบุ"));
+  const list=seriesList().slice(); if(cur && !list.includes(cur)) list.push(cur);
+  for(const s of list) sel.append(h("option",{value:s},s+(seriesList().includes(s)?"":" (ลบจากตัวเลือกแล้ว)")));
+  sel.value=cur;
+  const chips=$("#seriesChips"); chips.replaceChildren(...seriesList().map(s=>h("span",null,s,
+    h("button",{type:"button","aria-label":"ลบ "+s,title:"ลบตัวเลือก "+s,onclick:()=>saveSeries(seriesList().filter(x=>x!==s))},"×"))));
+}
+async function saveSeries(list){
+  try{ await queueWrite("config",()=>S.db.doc("meta/config").set({series:list},{merge:true})); S.series=list; renderSeriesSel(); toast("บันทึกตัวเลือกซีรีส์แล้ว"); }
+  catch(e){ toast(writeErr(e)); }
+}
+$("#seriesEdit").addEventListener("click",()=>{ const b=$("#seriesBox"); b.hidden=!b.hidden; if(!b.hidden) $("#seriesNew").focus(); });
+function addSeries(){
+  const inp=$("#seriesNew"), v=inp.value.trim().replace(/\s+/g," "); if(!v){ inp.focus(); return; }
+  if(seriesList().some(x=>x.toLowerCase()===v.toLowerCase())){ toast("มีซีรีส์นี้อยู่แล้ว"); return; }
+  inp.value=""; saveSeries(seriesList().concat([v])).then(()=>{ $("#fSeries").value=v; });
+}
+$("#seriesAdd").addEventListener("click",addSeries);
+$("#seriesNew").addEventListener("keydown",e=>{ if(e.key==="Enter" && !e.isComposing){ e.preventDefault(); addSeries(); } });
+
+/* ---------- แชทในการ์ด ----------
+   เก็บเป็นอาร์เรย์ chat ในเอกสารการ์ด ส่งทีละข้อความด้วย arrayUnion ไม่ผ่านปุ่มบันทึก
+   โน้ตเดิม (ช่อง note) แสดงเป็นข้อความแรก อ่านอย่างเดียว */
+function linkify(text){
+  const out=[]; let last=0; const re=/https?:\/\/[^\s<>"']+/g; let m;
+  while((m=re.exec(text))){ if(m.index>last) out.push(text.slice(last,m.index));
+    const u=safeUrl(m[0]); out.push(u? h("a",{href:u,target:"_blank",rel:"noopener"},m[0]) : m[0]); last=m.index+m[0].length; }
+  if(last<text.length) out.push(text.slice(last));
+  return out;
+}
+function chatTime(iso){ const d=new Date(iso); return isNaN(d)? "" : d.getDate()+" "+TH_MON_S[d.getMonth()]+" "+pad(d.getHours())+":"+pad(d.getMinutes()); }
+function renderChat(scroll){
+  const box=$("#chatList"); if(!box || !draft) return;
+  const it=(draft.id && S.items.get(draft.id)) || draft;
+  const atEnd=box.scrollHeight-box.scrollTop-box.clientHeight<40;
+  box.replaceChildren();
+  const note=(it.note||"").trim();
+  if(note) box.append(h("div",{class:"msg old"},h("span",{class:"who"},"โน้ตเดิม"),h("div",{class:"bub"},linkify(note))));
+  const msgs=(Array.isArray(it.chat)?it.chat:[]).slice().sort((a,b)=>String(a.at).localeCompare(String(b.at)));
+  for(const m of msgs) box.append(h("div",{class:"msg"+(m.by===S.me?" me":"")},
+    h("span",{class:"who"},(m.by===S.me?"ฉัน":nameOf(m.by))+"  "+chatTime(m.at)),h("div",{class:"bub"},linkify(String(m.text||"")))));
+  if(!note && !msgs.length) box.append(h("div",{class:"none"}, draft.id? "ยังไม่มีข้อความ เริ่มคุยเรื่องงานนี้ได้เลย" : "บันทึกงานก่อน แล้วจึงคุยในแชทได้"));
+  if(scroll || atEnd) box.scrollTop=box.scrollHeight;
+}
+function syncChatInput(){
+  const off=!draft || !draft.id || S.readOnly || !S.db;
+  $("#chatInput").disabled=off; $("#chatSend").disabled=off;
+}
+let chatBusy=false;
+async function sendChat(){
+  const inp=$("#chatInput"), text=inp.value.trim();
+  if(!text || chatBusy || !draft || !draft.id || !S.db) return;
+  const msg={by:S.me, at:new Date().toISOString(), text:text.slice(0,2000)};
+  const ref=S.db.doc("items/"+draft.id);
+  chatBusy=true; $("#chatSend").disabled=true;
+  try{
+    const FV=window.firebase && firebase.firestore && firebase.firestore.FieldValue;
+    if(FV) await queueWrite(draft.id,()=>ref.update({chat:FV.arrayUnion(msg)}));
+    else { const cur=S.items.get(draft.id)||{}; await queueWrite(draft.id,()=>ref.update({chat:(cur.chat||[]).concat([msg])})); }
+    inp.value=""; autoGrow();
+  }catch(e){ toast(writeErr(e)); }
+  finally{ chatBusy=false; syncChatInput(); inp.focus(); }
+}
+function autoGrow(){ const t=$("#chatInput"); t.style.height="auto"; t.style.height=Math.min(140,t.scrollHeight)+"px"; }
+$("#chatSend").addEventListener("click",sendChat);
+$("#chatInput").addEventListener("input",autoGrow);
+$("#chatInput").addEventListener("keydown",e=>{ if(e.key==="Enter" && !e.shiftKey && !e.isComposing){ e.preventDefault(); sendChat(); } });
 function renderStageSteps(){
   const box=$("#fStage"); box.replaceChildren();
   const cur=stageIdx(draft);
@@ -1190,17 +1318,25 @@ function renderStageSteps(){
         $("#fErr").textContent="ใส่ลิงก์โฟลเดอร์ Drive ก่อนส่งงานให้"+editorName()+"ทำคลิป"; $("#fDrive").focus(); return;
       }
       Object.assign(draft, stageChange(draft,k)); draft._stageMoved=true;
-      $("#fErr").textContent=""; renderStageSteps(); renderAction({});
+      $("#fErr").textContent=""; renderStageSteps(); renderAction({}); syncWork();
     }},l));
   });
 }
 function syncDue(){
   const vid=flowOf(draft)==="video";
-  $("#voiceDueF").hidden=!vid; $("#coverDueF").hidden=!vid; $("#coverUrlF").hidden=!vid; $("#readyF").hidden=!vid;
+  $("#voiceDueF").hidden=!vid; $("#coverUrlF").hidden=!vid; $("#coverF").hidden=!vid;
+  $("#coverDueF").hidden=!$("#fCoverReq").checked;
   $("#clipDueLbl").textContent = vid? "วันอัปคลิป (กำหนดส่ง)" : "วันส่งอินโฟ (กำหนดส่ง)";
+}
+$("#fCoverReq").addEventListener("change",syncDue);
+/* ช่องลิงก์คลิป/ไฟล์งาน: โผล่ตั้งแต่ขั้นคลิป (หรืออินโฟ) หรือเมื่อมีลิงก์อยู่แล้ว ซ่อนเฉยๆ ไม่ล้างค่า */
+function syncWork(){
+  const vid=flowOf(draft)==="video";
+  $("#fWorkF").hidden = !($("#fWork").value.trim() || stageIdx(draft)>=stageIdx(draft, vid?"clip":"design"));
 }
 function syncLinks(){
   const vid=flowOf(draft)==="video";
+  syncWork();
   $("#fWorkLbl").textContent = vid? "ลิงก์คลิป (ลีโอแนบตอนส่งรีวิว)" : "ลิงก์ไฟล์อินโฟ";
   [["#fDrive","#fDriveGo"],["#fWork","#fWorkGo"],["#fCoverUrl","#fCoverGo"],["#fPost","#fPostGo"]].forEach(([i,a])=>{
     const u=safeUrl($(i).value.trim()); const el=$(a); el.hidden=!u; if(u) el.href=u;
@@ -1231,8 +1367,7 @@ function renderAction(opts){
         h("button",{class:"btn primary",type:"button",onclick:()=>doAction("approve")},"ผ่าน พร้อมโพสต์"),
         h("button",{class:"btn",type:"button",onclick:()=>doAction("changes")},"ขอแก้")));
   } else if(draft.stage==="post" && !draft.posted){
-    a=h("div",{class:"action"},h("h4",null,"รอโพสต์"),h("p",null,"โพสต์แล้ว ใส่ลิงก์โพสต์จริงในช่องด้านล่าง แล้วกดปิดงาน"),
-      h("div",{class:"acts"},h("button",{class:"btn primary",type:"button",onclick:()=>doAction("posted")},"โพสต์แล้ว ปิดงาน")));
+    a=h("div",{class:"action"},h("h4",null,"รอโพสต์"),h("p",null,"โพสต์แล้ว ใส่ลิงก์โพสต์จริงในช่องด้านล่าง แล้วกดบันทึก ระบบปิดงานให้เอง"));
   }
   if(a) box.append(a);
 }
@@ -1242,9 +1377,12 @@ function collect(){
   d.title=$("#fTitle").value.trim(); d.owner=$("#fOwner").value; d.postDate=$("#fDate").value;
   const isVid=flowOf(d)==="video";
   d.voiceDue = isVid ? $("#fVoiceDue").value : ""; d.clipDue=$("#fClipDue").value;
-  d.coverDue = isVid ? $("#fCoverDue").value : ""; d.coverUrl = isVid ? $("#fCoverUrl").value.trim() : "";
-  d.readyClip = isVid && $("#fReadyClip").checked; d.readyCover = isVid && $("#fReadyCover").checked;
-  d.driveUrl=$("#fDrive").value.trim(); d.workUrl=$("#fWork").value.trim(); d.postUrl=$("#fPost").value.trim(); d.note=$("#fNote").value.trim();
+  d.readyCover = isVid && $("#fCoverReq").checked;
+  d.coverDue = d.readyCover ? $("#fCoverDue").value : ""; d.coverUrl = isVid ? $("#fCoverUrl").value.trim() : "";
+  d.coverText = isVid ? $("#fCoverText").value.trim() : "";
+  d.series=$("#fSeries").value;
+  d.driveUrl=$("#fDrive").value.trim(); d.workUrl=$("#fWork").value.trim(); d.postUrl=$("#fPost").value.trim();
+  delete d.chat;
   return d;
 }
 function validate(d){
@@ -1267,13 +1405,17 @@ function describeChanges(prev,d){
   if((prev.clipDue||"")!==(d.clipDue||"")) out.push(d.clipDue?"ตั้งวันส่ง"+(flowOf(d)==="video"?"คลิป":"อินโฟ")+" "+thShort(d.clipDue):"ลบวันส่ง"+(flowOf(d)==="video"?"คลิป":"อินโฟ"));
   if((prev.coverDue||"")!==(d.coverDue||"")) out.push(d.coverDue?"ตั้งวันส่งปก "+thShort(d.coverDue):"ลบวันส่งปก");
   if((prev.coverUrl||"")!==(d.coverUrl||"")) out.push(d.coverUrl?"แนบลิงก์ปกคลิป":"ลบลิงก์ปกคลิป");
-  if(!!prev.readyClip!==!!d.readyClip) out.push(d.readyClip?"ติ๊กพร้อมทำคลิป":"เอาติ๊กพร้อมทำคลิปออก");
-  if(!!prev.readyCover!==!!d.readyCover) out.push(d.readyCover?"ติ๊กพร้อมทำปก":"เอาติ๊กพร้อมทำปกออก");
+  if(!!prev.readyCover!==!!d.readyCover) out.push(d.readyCover?"ขอปก":"ยกเลิกขอปก");
+  if((prev.coverText||"")!==(d.coverText||"")) out.push(d.coverText?"แก้พาดหัวปก":"ลบพาดหัวปก");
+  if((prev.series||"")!==(d.series||"")) out.push(d.series?"ตั้งซีรีส์ "+d.series:"เอาซีรีส์ออก");
+  if(!prev.posted && d.posted) out.push("โพสต์แล้ว");
+  else if(prev.posted && !d.posted) out.push("เปิดงานใหม่ (ลบลิงก์โพสต์)");
   if(prev.owner!==d.owner) out.push("เปลี่ยนเจ้าของเป็น "+nameOf(d.owner));
   if(prev.format!==d.format) out.push("เปลี่ยนรูปแบบเป็น "+FORMATS[d.format].label);
   return out.join(", ")||"แก้รายละเอียด";
 }
 async function persist(d, logText, logExtra){
+  applyPosted(d);
   const err=validate(d); if(err){ $("#fErr").textContent=err; return false; }
   const isNew=!d.id; const id=d.id || S.db.collection("items").doc().id;
   const prev=S.items.get(id);
@@ -1369,7 +1511,7 @@ function renderAuthBtn(){
 let slowT=null;
 function start(user){
   stopAll(); clearTimeout(slowT);
-  Object.assign(S,{items:new Map(),members:new Map(),profiles:{},editorId:null,kpi:{},kfol:{},ktg:{},
+  Object.assign(S,{items:new Map(),members:new Map(),profiles:{},editorId:null,series:null,kpi:{},kfol:{},ktg:{},
     me:null,isOwner:false,db:null,readOnly:false,loaded:false,slow:false,noDb:true,denied:false});
   if(!user){ renderAuthBtn(); render(); return; }
   S.me=String(user.email||"").toLowerCase();
@@ -1399,7 +1541,7 @@ function start(user){
     unsubs.push(kSub("kpi","kpi"),kSub("kpiFollows","kfol"),kSub("kpiTargets","ktg"));
     unsubs.push(db.doc("meta/config").onSnapshot(snap=>{
       const c=snap.exists?snap.data():{};
-      S.editorId=c.editorId||null; render();
+      S.editorId=c.editorId||null; S.series=Array.isArray(c.series)?c.series:null; render();
     },()=>{}));
   }
 
